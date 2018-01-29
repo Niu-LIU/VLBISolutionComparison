@@ -12,6 +12,7 @@ from functools import reduce
 
 
 __all__ = [
+    'vecmod_calc', 'vecerr_calc'
     'array_flatten', 'elim', 'elim3d',
     'wgt_mat', 'jacmat_calc', 'res_mat',
     'trans_solve', 'trans_fitting',
@@ -19,6 +20,30 @@ __all__ = [
 
 
 # -----------------------------  FUNCTIONS -----------------------------
+def vecmod_calc(x):
+    return np.sqrt(np.sum(x ** 2))
+# -----------------------------------
+
+
+def vecerr_calc(par, err):
+    return np.sqrt(np.dot(par**2, err**2))
+
+
+def write_table(names, estimates, errors, fout):
+    '''save estmates and corresponding formal errors into a horizontal table.
+    '''
+    nameline = '$%10s$' % names[0]
+    dataline = '%+8.3f $\\pm$ %8.3f' % (estimates[0], errors[0])
+    # dataline = '$%+8.1f \\pm %8.1f$' % (estimates[0], errors[0])
+    for i in range(1, len(names)):
+        nameline += '  &$%10s$' % names[i]
+        dataline += '  &%+8.3f $\\pm$ %8.3f' % (estimates[i], errors[i])
+        # dataline += '  &$%+8.1f \\pm %8.1f$' % (estimates[i], errors[i])
+    nameline += ' \\\\'
+    dataline += ' \\\\'
+    print(nameline + '\n \\hline \n' + dataline, file=fout)
+
+
 def array_flatten(x1, x2, x3):
     '''
     '''
@@ -151,14 +176,16 @@ def res_mat(dx, dy, dz, x, y, z, w):
 
     # Calculate the residual. ( O - C )
     ResArr = dPos - np.dot(JacMat, w)
-    ResX, ResY, ResZ = np.resize(ResArr, (3, dx.size))
+    Resx, Resy, Resz = np.resize(ResArr, (3, dx.size))
 
-    return ResX, ResY, ResZ
+    return Resx, Resy, Resz
 # ---------------------------------------------------
 
 
-def trans_solve(dx, dy, dz, x, y, z,
-                errX, errY, errZ, corXY, corXZ, corYZ):
+def trans_solve(dx, dy, dz,
+                errX, errY, errZ,
+                corXY, corXZ, corYZ,
+                x, y, z):
 
     # Jacobian matrix and its transpose.
     JacMat, JacMatT = jacmat_calc(x, y, z)
@@ -189,11 +216,13 @@ def trans_solve(dx, dy, dz, x, y, z,
 # ----------------------------------------------------
 
 
-def trans_fitting(dx, dy, dz, x, y, z,
-                  errX, errY, errZ, corXY, corXZ, corYZ):
+def trans_fitting(dx, dy, dz,
+                  errX, errY, errZ,
+                  corXY, corXZ, corYZ,
+                  x, y, z):
 
-    w, sig, cof = trans_solve(dx, dy, dz, x, y, z,
-                              errX, errY, errZ, corXY, corXZ, corYZ)
+    w, sig, cof = trans_solve(dx, dy, dz, errX, errY, errZ,
+                              corXY, corXZ, corYZ, x, y, z)
 
     # Iteration.
     num1 = 1
@@ -228,24 +257,62 @@ def trans_fitting(dx, dy, dz, x, y, z,
                                   np.take(corYZ, indice)]
 
         wn, sign, cofn = trans_solve(dxn, dyn, dzn,
-                                     xn, yn, zn,
                                      errXn, errYn, errZn,
-                                     corXYn, corXZn, corYZn)
+                                     corXYn, corXZn, corYZn,
+                                     xn, yn, zn)
         w = wn
-        # print('# Number of sample: %d  %d' % (dRA.size-num1, dRA.size-num2),\
-        #     file = flog)
+        print('# Number of sample: %d  %d' %
+              (dx.size - num1, dx.size - num2))
+        # file=flog)
 
     rdx, rdy, rdz = res_mat(dx, dy, dz, x, y, z, w)
     ind_outl = np.setxor1d(np.arange(dx.size), indice)
 
     return wn, sign, cofn, ind_outl, rdx, rdy, rdz
 
+
+def itrf_trans(sta, dpvX, dpvY, dpvZ,
+               pvXerr, pvYerr, pvZerr,
+               corXY, corXZ, corYZ,
+               pvX, pvY, pvZ,
+               flog, ftex):
+
+    # Name of estimated parameters.
+    xname = ['T_1', 'T_2', 'T_3', 'd', 'R_1', 'R_2', 'R_3']
+
+    x, sig, corf, ind_outl1, rdx, rdy, rdz = trans_fitting(
+        dx, dy, dz, errX, errY, errZ,
+        corXY, corXZ, corYZ, x, y, z)
+
+    [tx,  ty,  tz,  d, rx,  ry,  rz] = x
+    [txerr,  tyerr,  tzerr,  derr, rxerr,  ryerr,  rzerr] = sig
+
+    r = vecmod_calc(np.array([tx,  ty,  tz]))
+    rerr = vecerr_calc(np.array([tx,  ty,  tz]),
+                       np.array([txerr,  tyerr,  tzerr]))
+
+# Print the result
+    # For log file.
+    print("#### Translation component:\n",
+          ' %+8.3f +/- %8.3f |' * 3 % (tx, txerr, ty, tyerr, tz, tzerr),
+          file=flog)
+    print("#### Scale factor:\n",
+          " %+8.3f +/- %8.3f" % (d, derr), file=flog)
+    print('#### Rotation component:\n',
+          ' %+8.3f +/- %8.3f |' * 3 % (rx, rxerr, ry, ryerr, rz, rzerr),
+          '=> %8.3f +/- %8.3f' % (r, rerr), file=flog)
+    print('##   correlation coefficients are:\n', corr1, file=flog)
+    # Print the outliers
+    print_outlier(sta, ind_outl1, flog)
+    # For tex file.
+    write_table(xname, x, sig, corf, ftex)
+
 # -------------------------- TEST ------------------------------------
 
 
 def test_code():
     # For test
-    N = 3000
+    N = 500
     x1 = np.arange(N) * 1.e-1
     x2 = x1**3
     x3 = x2 + 3.4 * np.sqrt(x1)
@@ -257,10 +324,11 @@ def test_code():
     ze = np.random.normal(0, 0.1, N)
     xerr = np.vstack((xe, ye, ze))
 
+    D = 0.95
     R1, R2, R3 = 0.1, 0.3, 0.5
-    R = np.array([[0, -R3, R2],
-                  [R3, 0, -R1],
-                  [-R2, R1, 0]])
+    R = np.array([[D, -R3, R2],
+                  [R3, D, -R1],
+                  [-R2, R1, D]])
     # print(R.shape)
 
     T = np.array([[1.5, 0.0, 0.0],
@@ -268,7 +336,7 @@ def test_code():
                   [0.0, 0.0, 0.8]])
     # print(np.dot(T, np.ones((3, N))))
 
-    y = np.dot(T, np.ones((3, N))) + 0.95 * (x) + np.dot(R, x) + xerr
+    y = np.dot(T, np.ones((3, N))) + np.dot(R, x) + xerr
 
     dx1, dx2, dx3 = y
     err = np.ones_like(x1)
@@ -276,16 +344,17 @@ def test_code():
     cor = np.zeros_like(x1)
 
     w, sig, cof, ind, _, _, _ = trans_fitting(dx1, dx2, dx3,
-                                              x1, x2, x3,
                                               err, err, err,
-                                              cor, cor, cor)
+                                              cor, cor, cor,
+                                              x1, x2, x3)
     print("w:", w)
     print("sigma:", sig)
     print("coefficient:", cof)
     print("indice: ", ind)
 
-# Time the cost time for 1 run.
-from timeit import Timer
-t1 = Timer("test_code()",  "from __main__ import test_code")
-print(t1.timeit(1))
+# ------------------------------- MAIN --------------------------------
+# # # Time the cost time for 1 run.
+# from timeit import Timer
+# t1 = Timer("test_code()",  "from __main__ import test_code")
+# print(t1.timeit(1))
 # --------------------------------- END --------------------------------

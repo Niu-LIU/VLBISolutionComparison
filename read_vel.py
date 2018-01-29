@@ -149,24 +149,24 @@ def read_vel(dataflea):
             VU, VU_err, VE, VE_err, VN, VN_err]
 
 
-# Retrieve estimates.
-if len(sys.argv) == 1:
-    datafile = 'result/test.vel'
-else:
-    datafile = sys.argv[1]
-[staname, VX, VX_err, VY, VY_err, VZ, VZ_err,
- VU, VU_err, VE, VE_err, VN, VN_err] = read_vel(datafile)
-print(staname[0],
-      VX[0],
-      VX_err[0],
-      VY[0],
-      VY_err[0],
-      VZ[0],
-      VZ_err[0],
-      VU[0],
-      VU_err[0],
-      VE[0],
-      VE_err[0],
-      VN[0],
-      VN_err[0])
+# # Retrieve estimates.
+# if len(sys.argv) == 1:
+#     datafile = 'result/test.vel'
+# else:
+#     datafile = sys.argv[1]
+# [staname, VX, VX_err, VY, VY_err, VZ, VZ_err,
+#  VU, VU_err, VE, VE_err, VN, VN_err] = read_vel(datafile)
+# print(staname[0],
+#       VX[0],
+#       VX_err[0],
+#       VY[0],
+#       VY_err[0],
+#       VZ[0],
+#       VZ_err[0],
+#       VU[0],
+#       VU_err[0],
+#       VE[0],
+#       VE_err[0],
+#       VN[0],
+#       VN_err[0])
 # ------------------------------ END -----------------------------------

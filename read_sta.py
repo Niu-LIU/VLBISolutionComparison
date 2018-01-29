@@ -289,48 +289,48 @@ def read_sta(dataflea):
             XpYv, YpYv, ZpYv, XvYv, XpZv, YpZv, ZpZv, XvZv, YvZv]
 
 
-# Retrieve estimates.
-if len(sys.argv) == 1:
-    datafile = 'result/test.sta'
-else:
-    datafile = sys.argv[1]
-[staname, X, X_err, Y, Y_err, Z, Z_err,
- U, U_err, E, E_err, N, N_err,
- ObsUse, ObsTot, SesUse, SesTot, DateBeg, DateEnd,
- XpYp, XpZp, YpZp, XpXv, YpXv, ZpXv,
- XpYv, YpYv, ZpYv, XvYv, XpZv, YpZv, ZpZv, XvZv, YvZv] = read_sta(datafile)
-print(staname[0],
-      X[0],
-      X_err[0],
-      Y[0],
-      Y_err[0],
-      Z[0],
-      Z_err[0],
-      U[0],
-      U_err[0],
-      E[0],
-      E_err[0],
-      N[0],
-      N_err[0],
-      ObsUse[0],
-      ObsTot[0],
-      SesUse[0],
-      SesTot[0],
-      DateBeg[0],
-      DateEnd[0],
-      XpYp[0],
-      XpZp[0],
-      YpZp[0],
-      XpXv[0],
-      YpXv[0],
-      ZpXv[0],
-      XpYv[0],
-      YpYv[0],
-      ZpYv[0],
-      XvYv[0],
-      XpZv[0],
-      YpZv[0],
-      ZpZv[0],
-      XvZv[0],
-      YvZv[0])
+# # Retrieve estimates.
+# if len(sys.argv) == 1:
+#     datafile = 'result/test.sta'
+# else:
+#     datafile = sys.argv[1]
+# [staname, X, X_err, Y, Y_err, Z, Z_err,
+#  U, U_err, E, E_err, N, N_err,
+#  ObsUse, ObsTot, SesUse, SesTot, DateBeg, DateEnd,
+#  XpYp, XpZp, YpZp, XpXv, YpXv, ZpXv,
+#  XpYv, YpYv, ZpYv, XvYv, XpZv, YpZv, ZpZv, XvZv, YvZv] = read_sta(datafile)
+# print(staname[0],
+#       X[0],
+#       X_err[0],
+#       Y[0],
+#       Y_err[0],
+#       Z[0],
+#       Z_err[0],
+#       U[0],
+#       U_err[0],
+#       E[0],
+#       E_err[0],
+#       N[0],
+#       N_err[0],
+#       ObsUse[0],
+#       ObsTot[0],
+#       SesUse[0],
+#       SesTot[0],
+#       DateBeg[0],
+#       DateEnd[0],
+#       XpYp[0],
+#       XpZp[0],
+#       YpZp[0],
+#       XpXv[0],
+#       YpXv[0],
+#       ZpXv[0],
+#       XpYv[0],
+#       YpYv[0],
+#       ZpYv[0],
+#       XvYv[0],
+#       XpZv[0],
+#       YpZv[0],
+#       ZpZv[0],
+#       XvZv[0],
+#       YvZv[0])
 # ------------------------------ END -----------------------------------

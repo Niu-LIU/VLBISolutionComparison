@@ -5,9 +5,17 @@
 Created on Thu Jan  4 10:37:01 2018
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+History
+N. Liu, 25 Jan 2018: add functions 'sub_posplot' and 'post_diff_plot'
+                     to plot the source position differences;
+                     add a parameter 'sollab' to function
+                     'sol_icrf2_diff_calc';
+
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 from os import path
 from read_sou import read_sou_pos
 from Transformation_cat import cat_transfor
@@ -20,8 +28,8 @@ deg2as = 3.6e3
 def read_icrf2(datafile):
     sourcename, Flag = np.genfromtxt(
         datafile, usecols=(1, 3), dtype=str, unpack=True)
-    RAh, RAm, RAs, Decd, Decm, Decs, e_RAs, e_DEas, cor =\
-        np.genfromtxt(datafile, usecols=range(4, 13), unpack=True)
+    RAh, RAm, RAs, Decd, Decm, Decs, e_RAs, e_DEas, cor = np.genfromtxt(
+        datafile, usecols=range(4, 13), unpack=True)
 
 # determine the sign of Declination
     strDecs = np.genfromtxt(datafile, usecols=(7,), dtype=str)
@@ -130,7 +138,54 @@ def position_diff_calc(dat1, dat2):
     return [dRA, dRA_err, dDC, dDC_err, cov]
 
 
-def sol_icrf2_diff_calc(cat, catdif):
+def sub_posplot(ax0, ax1, dRA, dRA_err, dDC, dDC_err, DC, soutp, mk):
+    '''
+    '''
+    ax0.plot(DC, dRA, mk, markersize=1, label=soutp)
+    ax1.plot(DC, dDC, mk, markersize=1, label=soutp)
+
+
+def post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC, tp, main_dir, sollab):
+    '''
+    '''
+
+    print("%d source for plot.\n" % DC.size)
+
+    unit = "mas"
+    lim = 2.5
+    fig, (ax0, ax1) = plt.subplots(nrows=2, sharex=True)
+
+    # ax0.errorbar(DC, dRA, yerr=dRA_err, fmt='.', elinewidth=0.01,
+    #              markersize=1)
+    # ax0.plot(DC, dRA, '.', markersize=1)
+    # ax1.plot(DC, dDC, '.', markersize=1)
+
+    flgs = ['D', 'V', 'N']
+    soutps = ['Defining', 'VCS', 'Non-VCS']
+    mks = ['r.', 'b*', 'g<']
+    for flg, soutp, mk in zip(flgs, soutps, mks):
+        cond = tp == flg
+        sub_posplot(ax0, ax1,
+                    dRA[cond], dRA_err[cond],
+                    dDC[cond], dDC_err[cond],
+                    DC[cond], soutp, mk)
+
+    ax0.set_ylabel("$\Delta \\alpha^* (%s)$" % unit)
+    ax0.set_ylim([-lim, lim])
+
+    # ax1.errorbar(DC, dDC, yerr=dDC_err, fmt='.', elinewidth=0.01,
+    #              markersize=1)
+    ax1.set_ylabel("$\Delta \delta (%s)$" % unit)
+    ax1.set_ylim([-lim, lim])
+    ax1.set_xlabel("Dec. (deg)")
+    ax1.set_xlim([-90, 90])
+
+    plt.legend(fontsize='xx-small')
+    plt.savefig("%s/plots/%s_sou_dif.eps" % (main_dir, sollab))
+    plt.close()
+
+
+def sol_icrf2_diff_calc(cat, catdif, sollab):
     '''Calculate the quasar position difference between two vlbi-solutions.
     '''
 
@@ -164,19 +219,27 @@ def sol_icrf2_diff_calc(cat, catdif):
               (soui, RA1n[i]/3.6e3, DC1n[i]/3.6e3,
                dRA[i], dRA_err[i],
                dDC[i], dDC_err[i],
-               cov[i], flg[i]),
+               cov[i], flgcom[i]),
               file=fdif)
 
     fdif.close()
+
+    # main_dir = "/home/nliu/solutions/GalacticAberration" # vlbi2
+    # main_dir = "/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3"  # My MacOS
+    main_dir = path.dirname(cat)
+    post_diff_plot(dRA / 1.e3, dRA_err / 1.e3,
+                   dDC / 1.e3, dDC_err / 1.e3, DC1n / 3.6e3,
+                   np.array(flgcom), main_dir, sollab)
 
 
 def solution_icrf2_diff_analysis(datadir, datafile, sollab):
     '''
     '''
 
-    catdif = "%s/%s_Gaiadr1_dif.sou" % (datadir, datafile[:-4])
+    catdif = "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4])
 
-    sol_icrf2_diff_calc("%s/%s" % (datadir, datafile), catdif)
+    sol_icrf2_diff_calc("%s/%s" % (datadir, datafile), catdif,
+                        "%s_icrf2" % sollab)
 
     # IERS transformation parameter
     print("# IERS transformation:")

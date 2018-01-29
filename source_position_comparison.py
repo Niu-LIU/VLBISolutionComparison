@@ -220,10 +220,10 @@ def catlg_diff_calc(cat1, cat2, lab):
 
             tp.append('O')
 
+    fdif.close()
+
     post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC1n,
                    np.array(tp), main_dir, lab)
-
-    fdif.close()
 
     return dif_file
 

@@ -206,7 +206,7 @@ def vsh_analysis(datafile,
     print('###########################################', file=FLOG)
     print('###########################################', file=FTEX)
 
-    print("# Fitting")
+    # print("# Fitting")
     RdRA1ig, RdDE1ig, RdRA2ig, RdDE2ig = catalog_comparison_VSH(
         '##  %s ' % datafile,
         sou, D_RA, D_DE, ERR_RA, ERR_DE, COR,
