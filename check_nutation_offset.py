@@ -5,6 +5,10 @@
 Created on Thu Jan 11 12:37:40 2018
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+History
+N.Liu, 31JAN18 : change the unit of Nutation offset in function stats_calc,
+                 from mas to uas
 """
 
 import numpy as np
@@ -47,12 +51,20 @@ def nutation_offset_stat(EOB_file):
     LOG_file = data_fil.replace(".eob", "_nut.log")
     flog = open("%s/logs/%s" % (data_dir, LOG_file), "w")
 
+# units are changed on 31 JAN 2018.
+    dX, dX_err = dX * 1.e3, dX_err * 1.e3
+    dY, dY_err = dY * 1.e3, dY_err * 1.e3
+
     # Statistics for all-time series
     print("For all-time:", file=flog)
-    print("dX (mas):", file=flog)
+# units are changed on 31 JAN 2018.
+    # print("dX (mas):", file=flog)
+    print("dX (uas):", file=flog)
     stats_calc(epo, dX, dX_err, flog)
 
-    print("dY: (mas)", file=flog)
+# units are changed on 31 JAN 2018.
+    # print("dY: (mas)", file=flog)
+    print("dY: (uas)", file=flog)
     stats_calc(epo, dY, dY_err, flog)
 
     # Statistics for post-1995.0 series
@@ -66,10 +78,14 @@ def nutation_offset_stat(EOB_file):
     dY = dY[con]
     dY_err = dY_err[con]
 
-    print("dX (mas):", file=flog)
+# units are changed on 31 JAN 2018.
+    # print("dX (mas):", file=flog)
+    print("dX (uas):", file=flog)
     stats_calc(epo, dX, dX_err, flog)
 
-    print("dY: (mas)", file=flog)
+# units are changed on 31 JAN 2018.
+    # print("dY: (mas)", file=flog)
+    print("dY: (uas)", file=flog)
     stats_calc(epo, dY, dY_err, flog)
 
     flog.close()

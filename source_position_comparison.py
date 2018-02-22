@@ -9,8 +9,9 @@ Created on Fri Dec 22 14:09:36 2017
 
 import numpy as np
 import matplotlib.pyplot as plt
+from functools import reduce
 from read_sou import read_sou_pos
-from Transformation_cat import cat_transfor
+from Transformation_cat import catalog_transfor
 from VSH_analysis import vsh_analysis
 
 
@@ -96,6 +97,59 @@ def position_diff_calc(dat1, dat2):
     return [dRA, dRA_err, dDC, dDC_err, cov]
 
 
+def nor_sep_calc(RA1, DC1, RA1_err, DC1_err, Cor1,
+                 RA2, DC2, RA2_err, DC2_err, Cor2,
+                 arccof=None):
+    '''Calculate the normalized seperation.
+
+
+    Parameters
+    ----------
+    RA / DC : Right Ascension / Declination, arcsec
+    e_RA / e_DC : formal uncertainty of RA / DC, micro-as.
+    Cor : correlation coeffient between RA and DC.
+
+    Suffix 'G' stands for GaiaDR1 and I for VLBI catalog.
+
+    Returns
+    ----------
+    X_a / X_d : normalized coordinate differences in RA / DC, unit-less
+    X : Normalized separations, unit-less.
+    '''
+
+    if arccof is None:
+        arccof = np.cos(np.deg2rad(DC1 / 3600.))
+
+    # as -> uas
+    dRA = (RA1 - RA2) * 1.e6 * arccof
+    dRA_err = np.sqrt(RA1_err**2 + RA2_err**2)
+    dDC = (DC1 - DC2) * 1.e6
+    dDC_err = np.sqrt(DC1_err**2 + DC2_err**2)
+
+    pos_seps = np.sqrt(dRA**2 + dDC**2)
+
+    # Normalised coordinate difference
+    X_a = dRA / np.sqrt(RA1_err**2 + RA2_err**2)
+    X_d = dDC / np.sqrt(DC1_err**2 + DC2_err**2)
+
+    # Correlation coefficient of combined errors
+    C = (RA1_err * DC1_err * Cor1 +
+         RA2_err * DC2_err * Cor2) / (dRA_err * dDC_err)
+
+    # Normalised separation
+    X = np.zeros_like(X_a)
+
+    for i, (X_ai, X_di, Ci) in enumerate(zip(X_a, X_d, C)):
+
+        wgt = np.linalg.inv(np.mat([[1, Ci],
+                                    [Ci, 1]]))
+        Xmat = np.array([X_ai, X_di])
+        # Xi = np.sqrt(reduce(np.dot, (Xmat, wgt, Xmat)))
+        X[i] = np.sqrt(reduce(np.dot, (Xmat, wgt, Xmat)))
+
+    return X_a, X_d, X
+
+
 def sub_posplot(ax0, ax1, dRA, dRA_err, dDC, dDC_err, DC, soutp):
     '''
     '''
@@ -136,12 +190,14 @@ def post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC, tp, main_dir, lab):
                     dDC[cond], dDC_err[cond],
                     DC[cond], soutp)
 
-    ax0.set_ylabel("$\Delta R.A. (%s)$" % unit)
+    # ax0.set_ylabel("$\Delta R.A. (%s)$" % unit)
+    ax0.set_ylabel("$\Delta \\alpha^* (%s)$" % unit)
     ax0.set_ylim([-lim, lim])
 
     # ax1.errorbar(DC, dDC, yerr=dDC_err, fmt='.', elinewidth=0.01,
     #              markersize=1)
-    ax1.set_ylabel("$\Delta Dec. (%s)$" % unit)
+    # ax1.set_ylabel("$\Delta Dec. (%s)$" % unit)
+    ax1.set_ylabel("$\Delta \delta (%s)$" % unit)
     ax1.set_ylim([-lim, lim])
     ax1.set_xlabel("Dec. (deg)")
     ax1.set_xlim([-90, 90])
@@ -167,6 +223,10 @@ def catlg_diff_calc(cat1, cat2, lab):
     dRA, dRA_err, dDC, dDC_err, cov = position_diff_calc(
         [RA1n, RA_err1n, DC1n, DC_err1n, cor1n],
         [RA2n, RA_err2n, DC2n, DC_err2n, cor2n])
+
+    X_a, X_d, X = nor_sep_calc(
+        RA1n, DC1n, RA_err1n, DC_err1n, cor1n,
+        RA2n, DC2n, RA_err2n, DC_err2n, cor2n)
 
     souicrf2, flg = np.genfromtxt(
         # "/home/nliu/Data/icrf2.dat", # vlbi2
@@ -225,30 +285,35 @@ def catlg_diff_calc(cat1, cat2, lab):
     post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC1n,
                    np.array(tp), main_dir, lab)
 
-    return dif_file
+    return [soucom, RA1n/3.6e3, DC1n/3.6e3,
+            dRA, dRA_err, dDC, dDC_err, cov,
+            X_a, X_d, X, np.array(tp)], dif_file
 
 
 def sou_position_com(cat1, cat2, comlabel):
     '''Compare the source position of two VLBI solutions
     '''
 
-    catdif = catlg_diff_calc(cat1, cat2, comlabel)
+    DiffData, dif_file = catlg_diff_calc(cat1, cat2, comlabel)
 
     # IERS transformation parameter
     print("# IERS transformation:")
-    cat_transfor(catdif, label=comlabel)
+    catalog_transfor(DiffData, dif_file, label=comlabel)
 
     print("# VSH analysis:")
     # VSH function parameters
-    vsh_analysis(catdif, label=comlabel)
+    vsh_analysis(DiffData, dif_file, label=comlabel)
 
 
 def test_code():
     '''
     '''
 
-    cat1 = "/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3/solutions/GalacticAberration/opa2018a_ga/opa2018a_ga.sou"
-    cat2 = "/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3/solutions/GalacticAberration/opa2018a_post93_nonga/opa2018a_post93_nonga.sou"
+    cat1 = ["/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3/solutions/"
+            "GalacticAberration/opa2018a_ga/opa2018a_ga.sou"][0]
+    cat2 = ["/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3/solutions/"
+            "GalacticAberration/opa2018a_post93_nonga/"
+            "opa2018a_post93_nonga.sou"][0]
     sou_position_com(cat1, cat2,
                      "opa2018a_gaAMP")
 
@@ -259,7 +324,7 @@ def test_code():
 # cat2 = "/home/nliu/solutions/test/a2/result_a2.sou"
 # catdif = "/home/nliu/solutions/test/a1_a2_dif.sou"
 # catlg_diff_calc(cat1, cat2, catdif)
-# # cat_transfor(catdif)
+# # catalog_transfor(catdif)
 # vsh_analysis(catdif)
 
 # # GA - Non-GA

@@ -8,9 +8,8 @@ Write the result into tex table.
 @author: Neo
 """
 
+
 # ----------- Horizontal Table -------------------
-
-
 def htable(names, estimates, errors, fout):
     '''save estmates and corresponding formal errors into a horizontal table.
     '''
@@ -25,9 +24,26 @@ def htable(names, estimates, errors, fout):
     dataline += ' \\\\'
     print(nameline + '\n \\hline \n' + dataline, file=fout)
 # ----------- END -------------------
+
+
+def htable_int(names, estimates, errors, fout):
+    '''save estmates and corresponding formal errors into a horizontal table.
+    '''
+    nameline = '$%10s$' % names[0]
+    # dataline = '%+8.3f $\\pm$ %8.3f' % (estimates[0], errors[0])
+    # dataline = '$%+8.1f \\pm %8.1f$' % (estimates[0], errors[0])
+    dataline = '$%+7.0f \\pm %7.0f$' % (estimates[0], errors[0])
+    for i in range(1, len(names)):
+        nameline += '  &$%10s$' % names[i]
+        dataline += '  &$%+7.0f \\pm %7.0f$' % (estimates[i], errors[i])
+        # dataline += '  &$%+8.1f \\pm %8.1f$' % (estimates[i], errors[i])
+    nameline += ' \\\\'
+    dataline += ' \\\\'
+    print(nameline + '\n \\hline \n' + dataline, file=fout)
+# ----------- END -------------------
+
+
 # ----------- Vertical Table -------------------
-
-
 def vtable(names, estimates, errors, fout):
     '''save estmates and corresponding formal errors into a vertical table.
     '''
@@ -36,6 +52,19 @@ def vtable(names, estimates, errors, fout):
         print('$%10s$  &$%+8.1f \\pm %8.1f$ \\\\'
               % (names[i], estimates[i], errors[i]), file=fout)
 # ----------- END -------------------
+
+
+# ----------- Vertical Table -------------------
+def vtable_int(names, estimates, errors, fout):
+    '''save estmates and corresponding formal errors into a vertical table.
+    '''
+    for i in range(len(names)):
+        # print('$%10s$  &%+8.3f $\\pm$ %8.3f \\\\'\
+        # print('$%10s$  &$%+8.1f \\pm %8.1f$ \\\\'
+        print('$%10s$  &$%+7.0f \\pm %7.0f$ \\\\'
+              % (names[i], estimates[i], errors[i]), file=fout)
+# ----------- END -------------------
+
 # ----------- Correlation coefficients -------------------
 
 
@@ -67,7 +96,17 @@ def write_result_deg1(x1name, x1, sig1, corr1, flog):
 def write_result_deg2(x1name, x2name, x2, sig2, corr2, flog):
     x21, sig21 = x2[: 6], sig2[: 6]
     x22, sig22 = x2[6:], sig2[6:]
-    htable(x1name, x21, sig21, flog)
+    # htable(x1name, x21, sig21, flog)
     htable(x2name, x22, sig22, flog)
+    # htable(x1name, x21, sig21, flog)
+    htable_int(x2name, x22, sig22, flog)
+    cor_table(x1name + x2name, corr2, flog)
+
+
+def write_result_deg2_int(x1name, x2name, x2, sig2, corr2, flog):
+    x21, sig21 = x2[: 6], sig2[: 6]
+    x22, sig22 = x2[6:], sig2[6:]
+    htable_int(x1name, x21, sig21, flog)
+    htable_int(x2name, x22, sig22, flog)
     cor_table(x1name + x2name, corr2, flog)
 # ----------- END -------------------

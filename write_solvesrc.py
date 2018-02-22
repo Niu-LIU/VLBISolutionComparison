@@ -62,14 +62,14 @@ def write_solvesrc(ivs, RA, DC, errDC, comment, fout):
     # outfile = "/Users/Neo/Astronomy/Data/catalogues/Gaia_cds/qso_solve.dat"
 
     # Loop for writing data
-    linefmt = "    %8s  %2d %2d %11.8f   %s%02d %2d  %10.7f   %7.3f   %s"
+    lfmt = "    %8s  %02d %02d %11.8f   %s%02d %02d  %10.7f   %7.3f   %s"
 
     # for i, souname in enumerate(ivs):
     # if DCsgn[i] == -1:
     #     sgn = '-'
     # else:
     #     sgn = ' '
-    # print(linefmt % (souname,
+    # print(lfmt % (souname,
     #                  RAh[i], RAm[i], RAs[i],
     #                  sgn[i], DCd[i], DCm[i], DCs[i], errDC[i]),
     #       file=fout)
@@ -77,8 +77,8 @@ def write_solvesrc(ivs, RA, DC, errDC, comment, fout):
     for (souni, RAhi, RAmi, RAsi, sgni, DCdi, DCmi, DCsi,
          errDCi) in zip(ivs, RAh, RAm, RAs, sgn, DCd, DCm, DCs, errDC):
 
-        print(linefmt % (souni, RAhi, RAmi, RAsi,
-                         sgni, DCdi, DCmi, DCsi, errDCi, comment),
+        print(lfmt % (souni, RAhi, RAmi, RAsi,
+                      sgni, DCdi, DCmi, DCsi, errDCi, comment),
               file=fout)
 
 

@@ -5,6 +5,11 @@
 Created on Wed Jan  3 18:08:42 2018
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+History
+N. Liu, 10 Feb 2018: change the input parameters of function
+                     'catalog_transfor', replacing variable 'datafile'
+                     with 'DiffData'
 """
 
 import numpy as np
@@ -19,31 +24,36 @@ from tex_table import write_result_deg1
 # -----------------------------  FUNCTIONS -----------------------------
 def mod_calc(x):
     return np.sqrt(np.dot(x, x))
+
+
 #------------------------------------------
-
-
 def sig_calc(x, s):
     return np.sqrt(np.dot(x**2, s**2) / np.dot(x, x))
+
+
 #------------------------------------------
-# def Orientation_calc(Condition, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, Flog):
+# def Orientation_calc(Condition, RA, DE, dRA, dDC, dRA_err, dDC_err, Flog):
+def tran_fitting(Condition, RA, DC, dRA, dDC,
+                 dRA_err, dDC_err, COV, Flog, Ftex):
 
-
-def tran_fitting(Condition, RA, DE, D_RA, D_DE,
-                 ERR_RA, ERR_DE, Cor, Flog, Ftex):
     ra = np.extract(Condition, RA)
-    de = np.extract(Condition, DE)
-    d_ra = np.extract(Condition, D_RA)
-    d_de = np.extract(Condition, D_DE)
-    err_ra = np.extract(Condition, ERR_RA)
-    err_de = np.extract(Condition, ERR_DE)
-    cor = np.extract(Condition, Cor)
+    dc = np.extract(Condition, DC)
+    dra = np.extract(Condition, dRA)
+    ddc = np.extract(Condition, dDC)
+    dra_err = np.extract(Condition, dRA_err)
+    ddc_err = np.extract(Condition, dDC_err)
+    cov = np.extract(Condition, COV)
+
     print('## Number of the Sample: %d' % ra.size, file=Flog)
+
 # Only rigid rotation => tran03_fitting.
-    w, sig, cormat, _ = tran03_fitting(d_ra, d_de, err_ra, err_de,
-                                       cor, ra, de)
+    w, sig, cormat, _ = tran03_fitting(dra, ddc, dra_err, ddc_err,
+                                       cov, ra, dc)
+
     [wx,  wy,  wz] = w
     [ewx, ewy, ewz] = sig
     wtol, ewtol = mod_calc(w), sig_calc(w, sig)
+
     # Write result into log file.
     print('###### Rigid rotation only.\n'
           '## The orientation are(uas):\n',
@@ -58,8 +68,8 @@ def tran_fitting(Condition, RA, DE, D_RA, D_DE,
     write_result_deg1(["A_1", "A_2", "A_3"], w, sig, cormat, Ftex)
 
 # consider a possible bias in declination => tran02_fitting.
-    w, sig, cormat, _ = tran02_fitting(d_ra, d_de, err_ra, err_de,
-                                       cor, ra, de)
+    w, sig, cormat, _ = tran02_fitting(dra, ddc, dra_err, ddc_err,
+                                       cov, ra, dc)
     [wx, wy, z, b] = w
     [ewx, ewy, ewz, eb] = sig
     wtol, ewtol = mod_calc(w[:3]), sig_calc(w[:3], sig[:3])
@@ -79,46 +89,53 @@ def tran_fitting(Condition, RA, DE, D_RA, D_DE,
     write_result_deg1(["A_1", "A_2", "A_3", "dz"], w, sig, cormat, Ftex)
 
 
-def cat_comparison(tag, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR,
+def cat_comparison(tag, RA, DC, dRA, dDC, dRA_err, dDC_err, COV,
                    flg, FLOG, FTEX):
-    print('##============================================', file=FLOG)
-    print('## ' + tag, file=FLOG)
-    print('##============================================', file=FTEX)
-    print('## ' + tag, file=FTEX)
+
+    print('##============================================\n'
+          '## %s' % tag, file=FLOG)
+    print('  # ============================================\n'
+          '## %s' % tag, file=FTEX)
+
     # All sources
-    con = (DE <= np.pi / 2)
+    con = (DC <= np.pi / 2)
     print('##--------- For All sources:', file=FLOG)
     print('##--------- For All sources:', file=FTEX)
-    tran_fitting(con, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR, FLOG, FTEX)
+    tran_fitting(con, RA, DC, dRA, dDC, dRA_err, dDC_err, COV,
+                 FLOG, FTEX)
+
     # Divide data into 2 sets: Nouthern and Southern declinations.
     # For Nouthern hemisphere
-    # con = (DE > 0)  # Nouthern
+    # con = (DC > 0)  # Nouthern
     # print('##--------- For Northern hemisphere:', file=FLOG)
     # print('##--------- For Northern hemisphere:', file=FTEX)
-    # tran_fitting(con, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR, FLOG, FTEX)
+    # tran_fitting(con, RA, DC, dRA, dDC, dRA_err, dDC_err, COV, FLOG, FTEX)
+
     # # For Southern hemisphere
-    # con = (DE < 0)  # Southern
+    # con = (DC < 0)  # Southern
     # print('##--------- For Southern hemisphere:', file=FLOG)
     # print('##--------- For Southern hemisphere:', file=FTEX)
-    # tran_fitting(con, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR, FLOG, FTEX)
+    # tran_fitting(con, RA, DC, dRA, dDC, dRA_err, dDC_err, COV, FLOG, FTEX)
+
     # For Defining sources.
     con = (flg == 'D')
     print('##--------- For Defining sources:', file=FLOG)
     print('##--------- For Defining sources:', file=FTEX)
-    tran_fitting(con, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR, FLOG, FTEX)
+    tran_fitting(con, RA, DC, dRA, dDC, dRA_err, dDC_err, COV, FLOG, FTEX)
+
     # For Non-defining sources.
     con = (flg != 'D')
     print('##--------- For Non-defining sources:', file=FLOG)
     print('##--------- For Non-defining sources:', file=FTEX)
-    tran_fitting(con, RA, DE, D_RA, D_DE, ERR_RA, ERR_DE, COR, FLOG, FTEX)
+    tran_fitting(con, RA, DC, dRA, dDC, dRA_err, dDC_err, COV, FLOG, FTEX)
 
 
-def cat_transfor(datafile,
-                 # vlbi2
-                 # main_dir="/home/nliu/solutions/GalacticAberration",
-                 # My MacOS
-                 main_dir="/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3",
-                 label=''):
+def catalog_transfor(DiffData, datafile,
+                     # vlbi2
+                     # main_dir="/home/nliu/solutions/GalacticAberration",
+                     # My MacOS
+                     main_dir="/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3",
+                     label=''):
     '''Estiamte the coordinate transformation parameters from positional offset.
     '''
 
@@ -131,7 +148,8 @@ def cat_transfor(datafile,
           '## The result of different kinds of transformation\n'
           '%s' % (datafile,
                   time.strftime('## %Y-%m-%d %H:%M:%S Begins!',
-                                time.localtime(time.time()))), file=FLOG)
+                                time.localtime(time.time()))),
+          file=FLOG)
     # Log file of tex table.
     FTEX = open("%s/logs/%s_trans_param.tex" % (main_dir, label), "w")
     print('## TEX FILE\n'
@@ -139,21 +157,25 @@ def cat_transfor(datafile,
           '## The result of different kinds of transformation\n'
           '%s' % (datafile,
                   time.strftime('## %Y-%m-%d %H:%M:%S Begins!',
-                                time.localtime(time.time()))), file=FTEX)
+                                time.localtime(time.time()))),
+          file=FTEX)
+
     # Load data
     # datafile = '/home/nliu/solutions/test/a1_a2_dif.sou'
-    (RAdeg, DEdeg, D_RA, ERR_RA, D_DE, ERR_DE, COR) = np.genfromtxt(
-        datafile, usecols=range(1, 8), unpack=True)
-    flg = np.genfromtxt(datafile, usecols=(8,), dtype=str)
+    # (RAdeg, DEdeg, dRA, dRA_err, dDC, dDC_err, COV) = np.genfromtxt(
+    #     datafile, usecols=range(1, 8), unpack=True)
+    # flg = np.genfromtxt(datafile, usecols=(8,), dtype=str)
+    [souIVS, RAdeg, DCdeg, dRA, dRA_err, dDC, dDC_err, COV,
+     X_a, X_d, X, flg] = DiffData
 
-    RA = np.deg2rad(RAdeg)  # Unit: rad
-    DE = np.deg2rad(DEdeg)  # Unit: rad
+    RArad = np.deg2rad(RAdeg)  # deg -> rad
+    DCrad = np.deg2rad(DCdeg)  # deg -> rad
     # ## TEST
-    # COR = np.zeros_like(RA)
+    # COV = np.zeros_like(RArad)
     # GA - non-GA
     print('###########################################', file=FLOG)
-    cat_comparison('##  GA - non-GA', RA, DE, D_RA, D_DE,
-                   ERR_RA, ERR_DE, COR, flg, FLOG, FTEX)
+    cat_comparison('##  GA - non-GA', RArad, DCrad, dRA, dDC,
+                   dRA_err, dDC_err, COV, flg, FLOG, FTEX)
 
     FLOG.close()
     FTEX.close()

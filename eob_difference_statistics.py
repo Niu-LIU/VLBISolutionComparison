@@ -5,6 +5,11 @@
 Created on Thu Dec 14 10:18:49 2017
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+History:
+N. Liu, 30 Jan 2018 : change the unit of Xp and Yp in function
+                      "eop_diff_stats", from mas to uas.
+
 """
 
 import numpy as np
@@ -77,17 +82,25 @@ def eop_diff_stats(DIF_file):
 
     errorbarplot_res(epo, dX, dXerr, "Xp", "mas", data_dir, label='Xp')
     errorbarplot_res(epo, dY, dYerr, "Yp", "mas", data_dir, label='Yp')
-    errorbarplot_res(epo, dU, dUerr, "UT1-UTC", "ms", data_dir, label='UT1')
+    errorbarplot_res(epo, dU, dUerr, "UT1-UTC", "ms", data_dir,
+                     label='UT1')
 
     # Statistical calculation
     LOG_file = data_fil.replace(".eop_c04_dif", "_eop_c04_dif.log")
     flog = open("%s/logs/%s" % (data_dir, LOG_file), "w")
 
-    print("X pole (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
+    # print("X pole (mas):", file=flog)
+    # stats_calc(epo, dX, dXerr, flog)
 
-    print("Y pole: (mas)", file=flog)
-    stats_calc(epo, dY, dYerr, flog)
+    # print("Y pole: (mas)", file=flog)
+    # stats_calc(epo, dY, dYerr, flog)
+
+# Modified in 30 Jan 2018
+    print("X pole (uas):", file=flog)
+    stats_calc(epo, dX * 1000, dXerr * 1000, flog)
+
+    print("Y pole (uas):", file=flog)
+    stats_calc(epo, dY * 1000, dYerr * 1000, flog)
 
     print("UT1-UTC (us):", file=flog)
     stats_calc(epo, dU * 1000, dUerr * 1000, flog)
@@ -116,11 +129,18 @@ def nut_diff_stats(DIF_file):
     LOG_file = data_fil.replace(".nut_c04_dif", "_nut_c04_dif.log")
     flog = open("%s/logs/%s" % (data_dir, LOG_file), "w")
 
-    print("dX (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
+    # print("dX (mas):", file=flog)
+    # stats_calc(epo, dX, dXerr, flog)
 
-    print("dY: (mas)", file=flog)
-    stats_calc(epo, dY, dYerr, flog)
+    # print("dY (mas):", file=flog)
+    # stats_calc(epo, dY, dYerr, flog)
+
+# Modified in 30 Jan 2018
+    print("dX (uas):", file=flog)
+    stats_calc(epo, dX * 1000, dXerr * 1000, flog)
+
+    print("dY (uas):", file=flog)
+    stats_calc(epo, dY * 1000, dYerr * 1000, flog)
 
     flog.close()
 

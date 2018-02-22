@@ -16,9 +16,9 @@ cos = np.cos
 pi = np.pi
 # Notice !!!
 # unit for RA and DE are rad.
+
+
 # ------------------ FUNCTION --------------------------------
-
-
 def elimination(y1r, y2r, n=3.0):
     # std1 = np.sqrt(np.sum(y1r**2 / y1_err**2) / np.sum(y1_err**-2))
     # std2 = np.sqrt(np.sum(y2r**2 / y2_err**2) / np.sum(y2_err**-2))
@@ -29,9 +29,9 @@ def elimination(y1r, y2r, n=3.0):
     indice = np.intersect1d(indice1, indice2)
     # return indice, std1, std2
     return indice
+
+
 # ----------------------------------------------------
-
-
 def wgt_mat(e_dRA, e_dDE, Cor):
     err = np.hstack((e_dRA, e_dDE))
 # Covariance.
@@ -48,9 +48,9 @@ def wgt_mat(e_dRA, e_dDE, Cor):
     # print(wgt[num-1, 2*num-1])
 # Return the matrix.
     return wgt
+
+
 # ---------------------------------------------------
-
-
 def Jac_mat_deg01(RA, DE):
     # Partial array dRA and dDE, respectively.
     # For RA
@@ -82,9 +82,9 @@ def Jac_mat_deg01(RA, DE):
     JacMatT = np.vstack((pard1, pard2, pard3, parr1, parr2, parr3))
     JacMat = np.transpose(JacMatT)
     return JacMat, JacMatT
+
+
 # ---------------------------------------------------
-
-
 def res_arr01(dRA, dDE, RA, DE, w):
     # Observables
     dPos = np.hstack((dRA, dDE))
@@ -94,9 +94,9 @@ def res_arr01(dRA, dDE, RA, DE, w):
     ResArr = dPos - np.dot(JacMat, w)
     ResRA, ResDE = np.resize(ResArr, (2, dRA.size))
     return ResRA, ResDE
+
+
 # ---------------------------------------------------
-
-
 def VSH_deg01(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     # The 1st degree of VSH function: glide and rotation.
     # Jacobian matrix and its transpose.
@@ -120,10 +120,10 @@ def VSH_deg01(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     corrcoef.resize((len(w), len(w)))
 # Return the result.
     return w, sig, corrcoef
+
+
 # ----------------------------------------------------
 # def VSHdeg01_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE, flog):
-
-
 def VSHdeg01_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     w, sig, cof = VSH_deg01(dRA, dDE, e_dRA, e_dDE, cor, RA, DE)
 # Iteration.
@@ -147,9 +147,9 @@ def VSHdeg01_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     dRAres, dDEres = res_arr01(dRA, dDE, RA, DE, w)
     ind_outl = np.setxor1d(np.arange(dRA.size), indice)
     return wn, sign, cofn, ind_outl, dRAres, dDEres
+
+
 # ---------------------------------------------------
-
-
 def Jac_mat_deg02(RA, DE):
     # Partial array dRA and dDE, respectively.
     # For RA
@@ -222,9 +222,9 @@ def Jac_mat_deg02(RA, DE):
     # quadrupole
     JacMat = np.transpose(JacMatT)
     return JacMat, JacMatT
+
+
 # ---------------------------------------------------
-
-
 def res_arr02(dRA, dDE, RA, DE, w):
     # Observables
     dPos = np.hstack((dRA, dDE))
@@ -234,9 +234,9 @@ def res_arr02(dRA, dDE, RA, DE, w):
     ResArr = dPos - np.dot(JacMat, w)
     ResRA, ResDE = np.resize(ResArr, (2, dRA.size))
     return ResRA, ResDE
+
+
 # ---------------------------------------------------
-
-
 def VSH_deg02(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     # The 2nd degree of VSH function: glide and rotation + quadrupole.
     # Jacobian matrix and its transpose.
@@ -260,29 +260,40 @@ def VSH_deg02(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     corrcoef.resize((len(w), len(w)))
 # Return the result.
     return w, sig, corrcoef
+
+
 # ----------------------------------------------------
 # def VSHdeg02_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE, flog):
-
-
 def VSHdeg02_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
     w, sig, cof = VSH_deg02(dRA, dDE, e_dRA, e_dDE, cor, RA, DE)
 # Iteration.
-    num1 = 1
+    num1 = 100
     num2 = 0
-    while(num1 != num2):
-        num1 = num2
-# Calculate the residual. ( O - C )
+
+    i = 0
+    # while(num2 != num1):
+    while(np.fabs(num2 - num1) > 1):
+
+        # For debugging
+        i += 1
+        print("Iteration times: ", i, num1, num2)
+
+        # Calculate the residual. ( O - C )
         rRA, rDE = res_arr02(dRA, dDE, RA, DE, w)
         indice = elimination(rRA, rDE)
-        num2 = dRA.size - indice.size
+
+        num1, num2 = num2, dRA.size - indice.size
+
         dRAn, dDEn, e_dRAn, e_dDEn = \
             np.take(  dRA, indice), np.take(  dDE, indice),\
             np.take(e_dRA, indice), np.take(e_dDE, indice)
         corn = np.take(cor, indice)
         RAn, DEn = np.take(RA, indice), np.take(DE, indice)
-        wn, sign, cofn = VSH_deg02(dRAn, dDEn, e_dRAn, e_dDEn, corn, RAn, DEn)
+        wn, sign, cofn = VSH_deg02(
+            dRAn, dDEn, e_dRAn, e_dDEn, corn, RAn, DEn)
         w = wn
-        # print('# Number of sample: %d  %d' % (dRA.size-num1, dRA.size-num2),\
+        # print('# Number of sample: %d  %d' % (
+        # dRA.size-num1, dRA.size-num2),\
         #     file = flog)
     ind_outl = np.setxor1d(np.arange(dRA.size), indice)
     dRAres, dDEres = res_arr02(dRA, dDE, RA, DE, w)
@@ -298,7 +309,7 @@ def VSHdeg02_fitting(dRA, dDE, e_dRA, e_dDE, cor, RA, DE):
 # sigma = 1
 # np.random.seed(0)
 # RA = np.random.normal(mu, sigma, sampleNum) * 2 * pi
-# DE = np.random.normal(mu, sigma, sampleNum) * pi / 2
+
 # R1, R2, R3 = 1.3, 3.2, 5.6
 # dRA = R1 * cos(RA) * sin(DE) + R2 * sin(RA) * sin(DE) - R3 * cos(DE) \
 #     + np.random.normal(mu, sigma, sampleNum) * 0.5

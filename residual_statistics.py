@@ -77,6 +77,8 @@ def stats_calc(t, res, err, flog):
           "# Intercept : %.3f" % intercept,
           file=flog)
 
+    return slope, intercept
+
     # # No weights
     # resn, wrms, cond = elim_wrms(res)
     # mean = np.average(resn)

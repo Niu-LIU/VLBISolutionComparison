@@ -25,8 +25,10 @@ def plot_res(x, y, lab, unit, plot_dir):
     # plt.xlim([1979.0, 2018.0])
 
     plt.plot(x, y, '.', markersize=0.1)
-    plt.xlabel('MJD')
-    plt.title("%s(%s)" % (lab, unit))
+    plt.xlabel('MJD (year)',
+               fontsize=15)
+    plt.title("%s(%s)" % (lab, unit),
+              fontsize=18)
     plt.xlim([1979.5, 2018.5])
 
     # plt.ylim([-30, 30])
@@ -61,8 +63,10 @@ def errorbarplot_res(x, y, err, comp, unit, plot_dir, label='',
         ax.plot(x, slope * (x - 2005.) + intercept,
                 'r-', ms=1, clip_on=False)
 
-    ax.set_xlabel('MJD')
-    ax.set_title("%s(%s)" % (comp, unit))
+    ax.set_xlabel('MJD (year)',
+                  fontsize=15)
+    ax.set_title("%s(%s)" % (comp, unit),
+                 fontsize=18)
     ax.set_xlim([1979.5, 2018.5])
 
     ax.set_ylim([-50, 50])
@@ -94,16 +98,21 @@ def errorbarplot_nut(epo, dX, dXerr, dY, dYerr, plot_dir):
                  ecolor='grey',
                  elinewidth=0.1)
 
-    ax0.set_ylabel("dX (mas)")
+    ax0.set_ylabel("dX (mas)",
+                   fontsize=15)
     ax0.set_ylim([-1, 1])
 
-    ax1.set_ylabel("dY (mas)")
+    ax1.set_ylabel("dY (mas)",
+                   fontsize=15)
     ax1.set_ylim([-1, 1])
 
-    ax1.set_xlabel('MJD (year)')
+    ax1.set_xlabel('MJD (year)',
+                   fontsize=15)
     ax1.set_xlim([1979.5, 2018.5])
 
-    plt.suptitle("Nutation offset w.r.t IAU 2006/2000A model")
+    plt.suptitle("Nutation offset w.r.t IAU 2006/2000A model",
+
+                 fontsize=18)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.1, top=0.92)
 

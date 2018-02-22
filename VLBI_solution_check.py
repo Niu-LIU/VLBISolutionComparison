@@ -43,8 +43,8 @@ print("#1) check .eob file wrt. C04 series:\n"
 check_eob_wrt_c04("%s/%s.eob" % (sol_dir, sol_lab))
 print("Check eob: done!\n")
 
-# Check Nutation offsets wrt IAU 2006 Precession/2000A Nutation
-print("#2) Check Nutation offsets wrt IAU 2006 Precession/2000A Nutation:\n"
+# Check Nutation offsets wrt IAU 2006/2000A Precession-Nutation
+print("#2) Check Nutation offsets wrt. IAU 2006/2000A Precession-Nutation:\n"
       "  .eob file: %s.eob" % sol_lab)
 nutation_offset_stat("%s/%s.eob" % (sol_dir, sol_lab))
 print("Check Nutation: done!\n")

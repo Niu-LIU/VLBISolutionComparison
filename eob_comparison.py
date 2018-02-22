@@ -65,7 +65,7 @@ def eob_diff_calc(dat1, dat2):
     Returns
     ----------
     dif : list, containing:
-            dX/dY/dU : difference of Xp/Yp/UT1, uas
+            dX/dY/dU : difference of Xp/Yp/UT1, uas/uas/us
             dX_err/dY_err/dU_err : formal uncertainty of Xp/Yp/UT1, uas
             covdXdY, covdXdU, covdYdU : covriance between dX/dY, dX/dU, dY/dU,
                                         uas^2
@@ -184,25 +184,24 @@ def eop_diff_stats(DIF_file, lab):
     # errorbarplot_res(epo, dU, dUerr, "$\Delta$UT1-UTC", "ms",
     #                  path.dirname(data_dir), "%s_dU" % lab)
 
-    errorbarplot_res(epo, dX, dXerr, "$\Delta$Xp", "uas",
-                     path.dirname(data_dir), "%s_dXp" % lab,
-                     -0.241, 1.796)
-    errorbarplot_res(epo, dY, dYerr, "$\Delta$Yp", "uas",
-                     path.dirname(data_dir), "%s_dYp" % lab,
-                     0.097, 2.172)
-    errorbarplot_res(epo, dU, dUerr, "$\Delta$UT1-UTC", "ms",
-                     path.dirname(data_dir), "%s_dU" % lab,
-                     9.492e-3, 116.766e-3)
+    # errorbarplot_res(epo, dX, dXerr, "$\Delta$Xp", "uas",
+    #                  path.dirname(data_dir), "%s_dXp" % lab,
+    #                  -0.241, 1.796)
+    # errorbarplot_res(epo, dY, dYerr, "$\Delta$Yp", "uas",
+    #                  path.dirname(data_dir), "%s_dYp" % lab,
+    #                  0.097, 2.172)
+    # errorbarplot_res(epo, dU, dUerr, "$\Delta$UT1-UTC", "ms",
+    #                  path.dirname(data_dir), "%s_dU" % lab,
+    #                  9.492e-3, 116.766e-3)
 
     # Statistical calculation
     flog = open("%s/%s_eop.log" % (data_dir, lab), "w")
 
     # Statistics for all-time series
     print("For all-time:", file=flog)
-    print("X pole (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
+    print("X pole (uas):", file=flog)
 
-    print("Y pole: (mas)", file=flog)
+    print("Y pole: (uas)", file=flog)
     stats_calc(epo, dY, dYerr, flog)
 
     print("UT1-UTC (us):", file=flog)
@@ -213,23 +212,40 @@ def eop_diff_stats(DIF_file, lab):
     print("For post-%.1f:" % splitpoint, file=flog)
 
     con = (epo >= splitpoint)
-    epo = epo[con]
-    dX = dX[con]
-    dXerr = dXerr[con]
-    dY = dY[con]
-    dYerr = dYerr[con]
-    dU = dU[con]
-    dUerr = dUerr[con]
+    epon = epo[con]
+    dXn = dX[con]
+    dXerrn = dXerr[con]
+    dYn = dY[con]
+    dYerrn = dYerr[con]
+    dUn = dU[con]
+    dUerrn = dUerr[con]
 
-    print("X pole (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
+    print("X pole (uas):", file=flog)
+    stats_calc(epon, dXn, dXerrn, flog)
+    slope, intercept = stats_calc(epo, dX, dXerr, flog)
 
-    print("Y pole: (mas)", file=flog)
-    stats_calc(epo, dY, dYerr, flog)
+    errorbarplot_res(epo, dX, dXerr, "$\Delta$Xp", "$\mu$as",
+                     path.dirname(data_dir), "%s_dXp" % lab,
+                     slope, intercept)
+
+    print("Y pole: (uas)", file=flog)
+    slope, intercept = stats_calc(epon, dYn, dYerrn, flog)
+
+    errorbarplot_res(epo, dY, dYerr, "$\Delta$Yp", "$\mu$as",
+                     path.dirname(data_dir), "%s_dYp" % lab,
+                     slope, intercept)
 
     print("UT1-UTC (us):", file=flog)
-    stats_calc(epo, dU * 1000, dUerr * 1000, flog)
+    # slope, intercept = stats_calc(epon, dUn * 1000, dUerrn * 1000,
+    #                               flog)
+    # It seems no need to multiply a 1000 because the unit for UT1 is
+    # already uas.
+    slope, intercept = stats_calc(epon, dUn, dUerrn,
+                                  flog)
 
+    errorbarplot_res(epo, dU, dUerr, "$\Delta$UT1-UTC", "ms",
+                     path.dirname(data_dir), "%s_dU" % lab,
+                     slope/1.e3, intercept/1.e3)
     flog.close()
 
 
@@ -243,6 +259,40 @@ def nut_diff_stats(DIF_file, lab):
 
     data_dir, data_fil = path.split(DIF_file)
 
+    # Statistical calculation
+    flog = open("%s/%s_nut.log" % (data_dir, lab), "w")
+
+    # Statistics for all-time series
+    print("For all-time:", file=flog)
+    print("dX (uas):", file=flog)
+    stats_calc(epo, dX, dXerr, flog)
+
+    print("dY: (uas)", file=flog)
+    stats_calc(epo, dY, dYerr, flog)
+
+    # Statistics for post-1995.0 series
+    splitpoint = 1995.
+    print("For post-%.1f:" % splitpoint, file=flog)
+
+    con = (epo >= splitpoint)
+    epon = epo[con]
+    dXn = dX[con]
+    dXerrn = dXerr[con]
+    dYn = dY[con]
+    dYerrn = dYerr[con]
+
+    print("dX (uas):", file=flog)
+    slope, intercept = stats_calc(epon, dXn, dXerrn, flog)
+    errorbarplot_res(epo, dX, dXerr, "$\Delta$dX", "$\mu$as",
+                     path.dirname(data_dir), "%s_ddX" % lab,
+                     slope, intercept)
+
+    print("dY: (uas)", file=flog)
+    slope, intercept = stats_calc(epon, dYn, dYerrn, flog)
+    errorbarplot_res(epo, dY, dYerr, "$\Delta$dY", "$\mu$as",
+                     path.dirname(data_dir), "%s_ddY" % lab,
+                     slope, intercept)
+
     # Plot
     # plot_res(epo, dX, "dX", "mas", data_dir)
     # plot_res(epo, dY, "dY", "mas", data_dir)
@@ -251,41 +301,6 @@ def nut_diff_stats(DIF_file, lab):
     #                  path.dirname(data_dir), "%s_ddX" % lab)
     # errorbarplot_res(epo, dY, dYerr, "$\Delta$dY", "$\mu$as",
     #                  path.dirname(data_dir), "%s_ddY" % lab)
-
-    errorbarplot_res(epo, dX, dXerr, "$\Delta$dX", "$\mu$as",
-                     path.dirname(data_dir), "%s_ddX" % lab,
-                     -0.010, -0.550)
-    errorbarplot_res(epo, dY, dYerr, "$\Delta$dY", "$\mu$as",
-                     path.dirname(data_dir), "%s_ddY" % lab,
-                     -0.322, 3.381)
-
-    # Statistical calculation
-    flog = open("%s/%s_nut.log" % (data_dir, lab), "w")
-
-    # Statistics for all-time series
-    print("For all-time:", file=flog)
-    print("dX (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
-
-    print("dY: (mas)", file=flog)
-    stats_calc(epo, dY, dYerr, flog)
-
-    # Statistics for post-1995.0 series
-    splitpoint = 1995.
-    print("For post-%.1f:" % splitpoint, file=flog)
-
-    con = (epo >= splitpoint)
-    epo = epo[con]
-    dX = dX[con]
-    dXerr = dXerr[con]
-    dY = dY[con]
-    dYerr = dYerr[con]
-
-    print("dX (mas):", file=flog)
-    stats_calc(epo, dX, dXerr, flog)
-
-    print("dY: (mas)", file=flog)
-    stats_calc(epo, dY, dYerr, flog)
 
     flog.close()
 
