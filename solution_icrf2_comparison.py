@@ -318,7 +318,21 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
 
 
 def solution_icrf2_diff_analysis(datadir, datafile, sollab):
-    '''
+    '''Compare the VLBI solution with ICRF2 solution.
+
+    The comparison is done by two methods:
+        1) Use the transformation equation recommended by IERS group;
+        2) Use degree-2 VSH analysis.
+
+    Parameters
+    ----------
+    datadir : string begining with '/'
+        directory where the data are stored.
+
+
+    Returns
+    ----------
+    None
     '''
 
     # catdif = "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4])
@@ -328,14 +342,14 @@ def solution_icrf2_diff_analysis(datadir, datafile, sollab):
                                    (datadir, datafile[:-4]),
                                    "%s_icrf2" % sollab)
 
-    # IERS transformation parameter
+    # IERS transformation parameters.
     print("# IERS transformation:")
     # catalog_transfor(catdif, datadir, "%s_icrf2" % sollab)
     catalog_transfor(DiffData,
                      "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4]),
                      datadir, "%s_icrf2" % sollab)
 
-    # VSH function parameters
+    # VSH function parameters.
     print("# VSH analysis:")
     # vsh_analysis(catdif, datadir, "%s_icrf2" % sollab)
     vsh_analysis(DiffData,

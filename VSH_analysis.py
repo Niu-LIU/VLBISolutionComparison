@@ -27,6 +27,10 @@ from vector_direction import vec6_calc
 sin = np.sin
 cos = np.cos
 
+__all__ = ["write_residual", "print_outlier", "VSH_analysis",
+           "apply_condition", "catalog_comparison_VSH",
+           "vsh_analysis"]
+
 
 # -----------------------------  FUNCTIONS -----------------------------
 def write_residual(
@@ -74,7 +78,7 @@ def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
               'M_{2,1}^{\\rm Re}', 'M_{2,1}^{\\rm Im}', 'M_{2,0}']
 
     x1, sig1, corr1, ind_outl1, RdRA1, RdDE1 = VSHdeg01_fitting(
-        d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad)
+        d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad, flog)
     [gx,  gy,  gz,  wx,  wy,  wz] = x1
     [egx, egy, egz, ewx, ewy, ewz] = sig1
     (r1, alr1, der1, errr1, erralr1, errder1,
@@ -111,7 +115,7 @@ def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
     write_result_deg1(x1name, x1, sig1, corr1, ftex)
 
     x2, sig2, corr2, ind_outl2, RdRA2, RdDE2 = VSHdeg02_fitting(
-        d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad)
+        d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad, flog)
     [gx,  gy,  gz,  wx,  wy,  wz] = x2[:6]
     [egx, egy, egz, ewx, ewy, ewz] = sig2[:6]
     (r2, alr2, der2, errr2, erralr2, errder2,
@@ -159,7 +163,7 @@ def apply_condition(sou, d_RA, d_DE, e_dRA, e_dDE, cor,
                     RArad, DErad, flog, ftex, condition,
                     X_a, X_d, X):
 
-    d_RA1,  d_DE1  = np.extract(condition, d_RA),  \
+    d_RA1,  d_DE1 = np.extract(condition, d_RA),  \
         np.extract(condition, d_DE)
     e_dRA1, e_dDE1 = np.extract(condition, e_dRA), \
         np.extract(condition, e_dDE)

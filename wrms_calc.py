@@ -9,19 +9,31 @@ Created on Wed Feb 14 11:02:00 2018
 This script is used for calculating the pre-fit wrms,
 post-fit wrms, reduced-chi square, and standard deviation.
 
+3 Mar 2018, Niu : now function 'calc_wrms' also computes the standard
+                  deviation
+
 """
 
 import numpy as np
 from functools import reduce
 
+__all__ = ["calc_wrms", "calc_chi2", "calc_2Dchi2"]
+
 
 # -----------------------------  FUNCTIONS -----------------------------
 def calc_wrms(x, err=None):
-    '''Calculate the (weighted) wrms of x series.
+    '''Calculate the (weighted) wrms and std of x series.
 
-    wrms = sqrt(sum( (xi-mean)^2/erri^2 ) / sum( 1.0/erri^2 ))
+    Standard deviation
+    std = sqrt(sum( (xi-mean)^2/erri^2 ) / sum( 1.0/erri^2 ))
          if weighted,
          = sqrt(sum( (xi-mean)^2/erri^2 ) / (N-1))
+         otherwise.
+
+    Weighted root mean square
+    wrms = sqrt(sum( xi^2/erri^2 ) / sum( 1.0/erri^2 ))
+         if weighted,
+         = sqrt(sum( xi^2/erri^2 ) / (N-1))
          otherwise.
 
     Parameters
@@ -35,19 +47,23 @@ def calc_wrms(x, err=None):
     mean : float
     wrms : float
         weighted rms
+    std : float
+        standard deviation
     '''
 
     if err is None:
         mean = np.mean(x)
         xn = x - mean
-        wrms = np.sqrt(np.dot(xn, xn) / (xn.size - 1))
+        std = np.sqrt(np.dot(xn, xn) / (xn.size - 1))
+        wrms = np.sqrt(np.dot(x, x) / (x.size - 1))
     else:
         p = 1. / err
         mean = np.dot(x, p**2) / np.dot(p, p)
         xn = (x - mean) * p
-        wrms = np.sqrt(np.dot(xn, xn) / np.dot(p, p))
+        std = np.sqrt(np.dot(xn, xn) / np.dot(p, p))
+        wrms = np.sqrt(np.dot(x*p, x*p) / np.dot(p, p))
 
-    return mean, wrms
+    return mean, wrms, std
 
 
 def calc_chi2(x, err, reduced=False, deg=0):
@@ -111,12 +127,15 @@ def calc_2Dchi2(x, errx, y, erry, covxy, reduced=False):
     for i, (xi, errxi, yi, erryi, covxyi
             ) in enumerate(zip(x, errx, y, erry, covxy)):
 
-        wgt = np.linalg.inv(np.mat([[errxi**2, covxyi],
-                                    [covxyi, erryi**2]]))
+        wgt = np.linalg.inv(np.array([[errxi**2, covxyi],
+                                      [covxyi, erryi**2]]))
 
         Xmat = np.array([xi, yi])
 
-        Qxy[i] = np.sqrt(reduce(np.dot, (Xmat, wgt, Xmat)))
+        Qxy[i] = reduce(np.dot, (Xmat, wgt, Xmat))
+
+        if Qxy[i] < 0:
+            print(Qxy[i])
 
     if reduced:
         return np.sum(Qxy) / (x.size - 2)

@@ -31,9 +31,9 @@ def read_gaiadr1(datafile):
         datafile, usecols=(0, 13), dtype=str,
         delimiter="|",
         unpack=True)
-    RAdeg, DCdeg, e_RAuas, e_DCuas, cor =\
-        np.genfromtxt(datafile, usecols=range(3, 8),
-                      delimiter="|", unpack=True)
+    [RAdeg, DCdeg, e_RAuas, e_DCuas, cor
+     ] = np.genfromtxt(datafile, usecols=range(3, 8),
+                       delimiter="|", unpack=True)
 
     return icrfn, RAdeg, DCdeg, e_RAuas, e_DCuas, cor, Flag
 

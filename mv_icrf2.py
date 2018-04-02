@@ -16,6 +16,7 @@ motion field, it is, therefore, neccessary to propagate the ICRF2 positions
 import numpy as np
 from write_solvesrc import write_solvesrc, write_NNRS
 from comparison_with_GaiaDR1 import comparison_with_Gaia
+from declination_bias_plot import dec_bias_wrtICRF2
 cos = np.cos
 sin = np.sin
 mjd_j2000 = 51544.5
@@ -108,6 +109,29 @@ def GA_effect_calc(RA, DC, ts, flag="arc"):
 
 def read_icrf2():
     '''Read ICRF2 file.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    ----------
+    icrfn : array of string
+        ICRF designation of source name;
+    ivsn : array of string
+        IVS designation of source name;
+    iersn : array of string
+        IERS designation of source name;
+    RA/Dec : array of float
+        Right Ascension/Declination in degree;
+    e_RA/e_DE : array of float
+        formal error of RA/Dec in milliarcsecond;
+    cor : array of float between [-1, +1]
+        correlation coefficient between RA and Dec in ICRF2 solution;
+    mepo : array of float
+        mean epoch of source position in Modified Julian day;
+    Flag : array of character
+        flag of source classification in ICRF2 catalog.
     '''
 
     icrf2_fil = "/Users/Neo/Astronomy/Data/catalogs/icrf/icrf2.dat"
@@ -137,6 +161,15 @@ def read_icrf2():
 
 def move_icrf2(year):
     ''' 'Move' ICRF2 mean-epoch to Year(MJD).
+
+    Parametes
+    ---------
+    year : float
+        Target epoch
+
+    Returns
+    ---------
+    None
     '''
 
     icrfn, ivsn, iersn, RA, DC, e_RA, e_DC, cor, mepo, Flag = read_icrf2()
@@ -180,6 +213,9 @@ def move_icrf2(year):
 
     # print(icrfn, RAn, e_RA * 1.e3,
     #       DCn, e_DC * 1.e3, cor)
+
+    # Declination wrt ICRF2
+    dec_bias_wrtICRF2(ivsn, DCn, e_DC * 1.e3, 'icrf2%.0f' % year)
 
     # Comparison with GaiaDR1
     comparison_with_Gaia(icrfn, RAn, e_RA * 1.e3,

@@ -140,9 +140,16 @@ def EOB_diff(eob1, eob2, eopdif, nutdif):
     fnutdif = open(nutdif, "w")
 
     print("# EOP differences between two catalogs:\n"
-          "# %s\n# %s" % (eob1, eob2), file=feopdif)
+          "# %s\n# %s\n"
+          "# Epoch  dXp  dXp_err  dYp  dYp_err  dU  dU_err     COV\n"
+          "# Year   uas  uas      uas  uas      ms  ms    XpYp XpU YpU\n"
+          % (eob1, eob2), file=feopdif)
+
     print("# Nutation differences between two catalogs:\n"
-          "# %s\n# %s" % (eob1, eob2), file=fnutdif)
+          "# %s\n# %s"
+          "# Epoch  dX  dX_err  dY  dY_err  COV\n"
+          "# Year   uas uas     uas uas     dXdY\n"
+          % (eob1, eob2), file=fnutdif)
 
     for i in range(dX.size):
         print("%10.2f  %+8.1f  %8.1f  %+8.1f  %8.1f  %+8.1f  %8.1f  "
