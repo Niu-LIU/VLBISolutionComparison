@@ -166,7 +166,7 @@ def catalog_transfor(DiffData, datafile,
     #     datafile, usecols=range(1, 8), unpack=True)
     # flg = np.genfromtxt(datafile, usecols=(8,), dtype=str)
     [souIVS, RAdeg, DCdeg, dRA, dRA_err, dDC, dDC_err, COV,
-     X_a, X_d, X, flg] = DiffData
+     ang_sep, X_a, X_d, X, flg] = DiffData
 
     RArad = np.deg2rad(RAdeg)  # deg -> rad
     DCrad = np.deg2rad(DCdeg)  # deg -> rad

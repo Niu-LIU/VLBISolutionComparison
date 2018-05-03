@@ -42,7 +42,7 @@ def position_taken(index, X, X_err, Y, Y_err, Z, Z_err):
     Zn = np.take(Z, index)
     Z_errn = np.take(Z_err, index)
 
-    return Xn, X_errn, Yn, Y_errn, Zn, Z_errn
+    return Xn, X_errn, Yn, Y_errn, Zn, Z_errnk
 
 
 def Xmatch(sta1, X1, X_err1, Y1, Y_err1, Z1, Z_err1,

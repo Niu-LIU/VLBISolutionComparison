@@ -21,7 +21,7 @@ N. Liu, 12 Feb 2018: add three parameters 'X_a', 'X_d', 'X' to the input
 import numpy as np
 import time
 from os import path
-from VSH_deg2_cor import VSHdeg01_fitting, VSHdeg02_fitting
+from vsh_deg2_cor import VSHdeg01_fitting, VSHdeg02_fitting
 from tex_table import write_result_deg1, write_result_deg2
 from vector_direction import vec6_calc
 sin = np.sin
@@ -47,7 +47,7 @@ def write_residual(
                              time.localtime(time.time())))
 
 
-def print_outlier(source, X_a, X_d, X, ind_outl, flog):
+def print_outlier(source, ang_sep, X_a, X_d, X, ind_outl, flog):
     '''
     '''
 
@@ -57,16 +57,17 @@ def print_outlier(source, X_a, X_d, X, ind_outl, flog):
     X1 = np.extract(ind_outl, X)
 
     print('## %d   Outliers: \n'
-          '##  Source     X_a    X_d    X' % outliers.size,
+          '##  Source     ang_sep    X_a    X_d    X' % outliers.size,
           file=flog)
 
-    for (outlier, X_ai, X_di, Xi) in zip(outliers, X_a1, X_d1, X1):
-        print('## %10s  %+8.3f  %+8.3f  %7.3f' %
-              (outlier, X_ai, X_di, Xi), file=flog)
+    for (outlier, ang_sepi, X_ai, X_di, Xi) in zip(
+            outliers, ang_sep, X_a1, X_d1, X1):
+        print('## %10s  %+8.1f  %+8.3f  %+8.3f  %7.3f' %
+              (outlier, ang_sepi, X_ai, X_di, Xi), file=flog)
 
 
 def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
-                 flog, ftex, X_a, X_d, X):
+                 flog, ftex, ang_sep, X_a, X_d, X):
     '''
     '''
 
@@ -101,7 +102,7 @@ def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
     print('##   correlation coefficients are:\n', corr1, file=flog)
 
     # Print the outliers
-    print_outlier(sou, X_a, X_d, X, ind_outl1, flog)
+    print_outlier(sou, ang_sep, X_a, X_d, X, ind_outl1, flog)
     # For tex file.
     print('## for degree 1:\n',
           '## Rotation component:\n',
@@ -139,7 +140,7 @@ def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
     print('## formal uncertainties:\n', sig2[6:], file=flog)
     print('##   correlation coefficients are:\n', corr2, file=flog)
     # Print the outliers
-    print_outlier(sou, X_a, X_d, X, ind_outl2, flog)
+    print_outlier(sou, ang_sep, X_a, X_d, X, ind_outl2, flog)
 
     # For tex file.
     print('## for degree 2:\n',
@@ -154,14 +155,14 @@ def VSH_analysis(sou, d_RA, d_DE, e_dRA, e_dDE, cor, RArad, DErad,
     write_result_deg2(x1name, x2name, x2, sig2, corr2, ftex)
 
     # Return the residual
-    return RdRA1, RdDE1, RdRA2, RdDE2
     # return RdRA1, RdDE1, RdRA1, RdDE1
+    return RdRA1, RdDE1, RdRA2, RdDE2
 
 
 # -----------------------------------
 def apply_condition(sou, d_RA, d_DE, e_dRA, e_dDE, cor,
                     RArad, DErad, flog, ftex, condition,
-                    X_a, X_d, X):
+                    ang_sep, X_a, X_d, X):
 
     d_RA1,  d_DE1 = np.extract(condition, d_RA),  \
         np.extract(condition, d_DE)
@@ -172,6 +173,7 @@ def apply_condition(sou, d_RA, d_DE, e_dRA, e_dDE, cor,
     cor1 = np.extract(condition, cor)
 
     # Added on 12 Feb 2018
+    ang_sep1 = np.extract(condition, ang_sep)
     X_a1 = np.extract(condition, X_a)
     X_d1 = np.extract(condition, X_d)
     X1 = np.extract(condition, X)
@@ -179,14 +181,14 @@ def apply_condition(sou, d_RA, d_DE, e_dRA, e_dDE, cor,
     RdRA1, RdDE1, RdRA2, RdDE2 = VSH_analysis(
         sou, d_RA1, d_DE1, e_dRA1, e_dDE1, cor1,
         RArad1, DErad1, flog, ftex,
-        X_a1, X_d1, X1)
+        ang_sep1, X_a1, X_d1, X1)
 
     return RdRA1, RdDE1, RdRA2, RdDE2
 
 
 def catalog_comparison_VSH(tag, sou, d_RA, d_DE, e_dRA, e_dDE, cor,
                            RArad, DErad, flg, FLOG, FTEX,
-                           X_a, X_d, X):
+                           ang_sep, X_a, X_d, X):
 
     print('## %s' % tag, file=FLOG)
     print('## %s' % tag, file=FTEX)
@@ -197,7 +199,7 @@ def catalog_comparison_VSH(tag, sou, d_RA, d_DE, e_dRA, e_dDE, cor,
     RdRA1a, RdDE1a, RdRA2a, RdDE2a = apply_condition(
         sou, d_RA, d_DE, e_dRA, e_dDE, cor,
         RArad, DErad, FLOG, FTEX, np.ones_like(d_RA),
-        X_a, X_d, X)
+        ang_sep, X_a, X_d, X)
 
 # For defining sources
     print('##--------- For Defining sources:', file=FLOG)
@@ -205,7 +207,7 @@ def catalog_comparison_VSH(tag, sou, d_RA, d_DE, e_dRA, e_dDE, cor,
     RdRA1d, RdDE1d, RdRA2d, RdDE2d = apply_condition(
         sou, d_RA, d_DE, e_dRA, e_dDE, cor,
         RArad, DErad, FLOG, FTEX, flg == 'D',
-        X_a, X_d, X)
+        ang_sep, X_a, X_d, X)
 
 # For non-defining sources
     print('##--------- For Non-defining sources:', file=FLOG)
@@ -213,7 +215,7 @@ def catalog_comparison_VSH(tag, sou, d_RA, d_DE, e_dRA, e_dDE, cor,
     RdRA1n, RdDE1n, RdRA2n, RdDE2n = apply_condition(
         sou, d_RA, d_DE, e_dRA, e_dDE, cor,
         RArad, DErad, FLOG, FTEX, flg != 'D',
-        X_a, X_d, X)
+        ang_sep, X_a, X_d, X)
 
     # Return resiudal of all sources
     return RdRA1a, RdDE1a, RdRA2a, RdDE2a
@@ -256,7 +258,7 @@ def vsh_analysis(DiffData, datafile,
     #     datafile, usecols=(0, 8), dtype=str, unpack=True)
 
     [sou, RAdeg, DEdeg, D_RA, ERR_RA, D_DE, ERR_DE, COR,
-     X_a, X_d, X, flg] = DiffData
+     ang_sep, X_a, X_d, X, flg] = DiffData
 
     ###########################################
     RArad, DErad = np.deg2rad(RAdeg), np.deg2rad(DEdeg)  # Unit: rad
@@ -269,7 +271,7 @@ def vsh_analysis(DiffData, datafile,
         '##  %s ' % datafile,
         sou, D_RA, D_DE, ERR_RA, ERR_DE, COR,
         RArad, DErad, flg, FLOG, FTEX,
-        X_a, X_d, X)
+        ang_sep, X_a, X_d, X)
 
     # Write the post-fitting residual.
     FLG = (flg == 'D')

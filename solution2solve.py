@@ -5,16 +5,19 @@
 Created on Wed Jan 24 15:08:21 2018
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+Read .sou file and rewrite the source position in SOLVEsrc format,
+which can be used as the a priori source position file in Solve.
+
 """
 
 import numpy as np
 import sys
 from os import system
 
+
 # -----------------------------  FUNCTIONS -----------------------------
-
-
-def solu2solve(datafile, label):
+def sou2solve(datafile, label):
     '''Transform GETPAR_SOU format into SOLVEsrc format
     '''
 
@@ -35,11 +38,13 @@ def solu2solve(datafile, label):
 
 
 def test_code():
-    solu2solve("/obs/nliu/solutions/GalacticAberration/opa2018a_ga/opa2018a_ga.sou",
-               "opa2018a")
+    sou2solve("/obs/nliu/solutions/GalacticAberration/opa2018a_ga/"
+              "opa2018a_ga.sou", "opa2018a")
 
+
+# -------------------------------- MAIN --------------------------------
 if len(sys.argv) is 3:
-    solu2solve(sys.argv[1], sys.argv[2])
+    sou2solve(sys.argv[1], sys.argv[2])
 else:
     exit()
 # --------------------------------- END --------------------------------

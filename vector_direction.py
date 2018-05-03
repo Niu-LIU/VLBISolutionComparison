@@ -78,10 +78,10 @@ def vecpar_calc(x, sig):
     #                     x[0]**2 + x[1]**2]) / cos(det_r) / A**3
     #
     # Let's simplifier them.
-    par_alp = np.array([-sin(alp_r), cos(alp_r), 0]) / g / cos(det_r)
+    par_alp = np.array([-sin(alp_r), cos(alp_r), 0]) / A / cos(det_r)
     par_det = np.array([-cos(alp_r) * sin(det_r),
                         -sin(alp_r) * sin(det_r),
-                        cos(det_r)]) / g
+                        cos(det_r)]) / A
     # ------------------ 30 Mar 2018 ----------------------------------
 
     errA, erralp_r, errdet_r = [vecerr_calc(par_Amp, sig),

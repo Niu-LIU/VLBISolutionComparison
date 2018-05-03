@@ -18,6 +18,8 @@ N., Liu     22 Jan, 2018    Add function 'GaiaDR12solve', and
 import numpy as np
 from write_solvesrc import write_solvesrc, write_NNRS
 from find_icrf2def import find_icrf2def
+from souname_xmatch import read_soun
+
 
 __all__ = {"read_GaiaDR1qso", "read_soun" "soudesign_trans",
            "GaiaDR12solve"}
@@ -63,11 +65,11 @@ def read_GaiaDR1qso(datafile):
     return souicrf, RAdeg, DEdeg, DEdeg_err
 
 
-def read_soun(datafile):
-    IVS, ICRF, IERS = np.genfromtxt(
-        datafile, usecols=(0, 1, 3), dtype=str, unpack=True)
+# def read_soun(datafile):
+#     IVS, ICRF, IERS = np.genfromtxt(
+#         datafile, usecols=(0, 1, 3), dtype=str, unpack=True)
 
-    return IVS, ICRF, IERS
+#     return IVS, ICRF, IERS
 
 
 def soudesign_trans(dsg1_sou, dsg1_all, dsg2_all):
@@ -161,6 +163,7 @@ def GaiaDR12solve():
         print("# Error! Please check file %s" % outfile)
 
     print('=======================  END  ============================')
+
 
 # ----------------------------------------------------------------------
 GaiaDR12solve()

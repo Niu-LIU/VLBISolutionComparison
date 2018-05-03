@@ -5,6 +5,10 @@
 Created on Mon Feb  5 11:31:11 2018
 
 @author: Neo(liuniu@smail.nju.edu.cn)
+
+N. Liu, 09 Apr 2018: minor changes in functions
+                     'solution_Gaia_diff_analysis' and
+                     'sol_Gaia_diff_calc'
 """
 
 import numpy as np
@@ -12,48 +16,101 @@ import time
 from os import path
 from functools import reduce
 import matplotlib.pyplot as plt
+from nor_sep import nor_sep_calc
 from VSH_analysis import write_residual, catalog_comparison_VSH
 
 
 # -----------------------------  FUNCTIONS -----------------------------
 def read_gaiadr1(datafile):
-    '''Read Gaia DR1 position.
+    '''Read Gaia DR1 position
 
-    NOTICE!!!
-    The file being read is not the original data file from CDS.
+    Parameters
+    ----------
+    datafile :
+        file name and full path of Gaia DR1 data
 
-    Note:   1) e_RA = err(RA*cos(DC))
-            2) unit for RA/DC : deg
-                    for e_RA/e_DC : uas
+    Returns
+    ----------
+    sourcename :
+        source name (ICRF designation) of quasars
+    RAdeg / DCdeg :
+        Right Ascension / Declination, degreees
+    RA_erruas / DC_erruas :
+        formal uncertainty of RA*cos(Dec) / DC, micro-as.
+    cor :
+        correlation coeffient between RA and DC.
+    Flag :
+        ICRF2 classification of quasars.
     '''
 
-    icrfn, Flag = np.genfromtxt(
-        datafile, usecols=(0, 13), dtype=str,
+    sourcename, Flag = np.genfromtxt(
+        datafile, usecols=(1, 13), dtype=str,
         delimiter="|",
         unpack=True)
-    [RAdeg, DCdeg, e_RAuas, e_DCuas, cor
-     ] = np.genfromtxt(datafile, usecols=range(3, 8),
-                       delimiter="|", unpack=True)
+    RAdeg, DCdeg, RA_erruas, DC_erruas, cor = np.genfromtxt(
+        datafile, usecols=range(3, 8), delimiter="|", unpack=True)
 
-    return icrfn, RAdeg, DCdeg, e_RAuas, e_DCuas, cor, Flag
+    return sourcename, RAdeg, DCdeg, RA_erruas, DC_erruas, cor, Flag
 
 
-def position_taken(index, RA, RA_err, DC, DC_err, cor):
+def position_taken(index, RA, RAc_err, Dec, Dec_err, cor):
     '''Extract the elements from array at specific index.
+
+    Parameters
+    ----------
+    index :
+        the indice corresponding to common sources
+    RA / Dec :
+        Right Ascension / Declination for all sources, degreees
+    RAc_err / Dec_err :
+        formal uncertainty of RA*cos(Dec) / Dec for all sources, micro-as.
+    cor :
+        correlation coeffient between RA and Dec for all sources.
+
+    Returns
+    ----------
+    RAn / Decn :
+        Right Ascension / Declination for common sources, degreees
+    RAc_errn / Dec_err :
+        formal uncertainty of RA*cos(Dec) / Dec for common sources, micro-as.
+    corn :
+        correlation coeffient between RA and Dec for common sources.
     '''
 
     RAn = np.take(RA, index)
-    RA_errn = np.take(RA_err, index)
-    DCn = np.take(DC, index)
-    DC_errn = np.take(DC_err, index)
+    RAc_errn = np.take(RAc_err, index)
+    Decn = np.take(Dec, index)
+    Dec_errn = np.take(Dec_err, index)
     corn = np.take(cor, index)
 
-    return RAn, RA_errn, DCn, DC_errn, corn
+    return RAn, RAc_errn, Decn, Dec_errn, corn
 
 
-def Xmatch(sou1, RA1, RA_err1, DC1, DC_err1, cor1,
-           sou2, RA2, RA_err2, DC2, DC_err2, cor2, flg):
-    '''Crossmatch between catalog and GaiaDR1.
+def Xmatch(sou1, RA1, RAc_err1, Dec1, Dec_err1, cor1,
+           sou2, RA2, RAc_err2, Dec2, Dec_err2, cor2, flg):
+    '''Crossmatch between Gaia and VLBI catalogs.
+
+    Parameters
+    ----------
+    sou :
+        source name (ICRF designation)
+    RA / Dec :
+        Right Ascension / Declination, degreees
+    RAc_err / DC_err :
+        formal uncertainty of RA*cos(Dec) / Dec, micro-as.
+    cor :
+        correlation coeffient between RA and Dec.
+
+    Returns
+    ----------
+    soucom :
+        name (ICRF designation) of common sources
+    RAn / Decn :
+        Right Ascension / Declination for common sources, degreees
+    RAc_errn / Dec_err :
+        formal uncertainty of RA*cos(Dec) / Dec for common sources, micro-as.
+    cor :
+        correlation coeffient between RA and Dec for common sources.
     '''
 
     soucom = []
@@ -71,69 +128,16 @@ def Xmatch(sou1, RA1, RA_err1, DC1, DC_err1, cor1,
             index2.append(j)
             flgcom.append(flg[j])
 
-    RA1n, RA_err1n, DC1n, DC_err1n, cor1n = position_taken(
-        index1, RA1, RA_err1, DC1, DC_err1, cor1)
-    RA2n, RA_err2n, DC2n, DC_err2n, cor2n = position_taken(
-        index2, RA2, RA_err2, DC2, DC_err2, cor2)
+    RA1n, RAc_err1n, Dec1n, Dec_err1n, cor1n = position_taken(
+        index1, RA1, RAc_err1, Dec1, Dec_err1, cor1)
+    RA2n, RAc_err2n, Dec2n, Dec_err2n, cor2n = position_taken(
+        index2, RA2, RAc_err2, Dec2, Dec_err2, cor2)
 
-    # print(RA1n.size, RA2n.size)
+    flgcom = np.array(flgcom)
 
-    return [soucom, np.array(flgcom),
-            RA1n, RA_err1n, DC1n, DC_err1n, cor1n,
-            RA2n, RA_err2n, DC2n, DC_err2n, cor2n]
-
-
-def nor_sep_calc(RA1, DC1, RA1_err, DC1_err, Cor1,
-                 RA2, DC2, RA2_err, DC2_err, Cor2,
-                 arccof=None):
-    '''Calculate the normalized seperation.
-
-
-    Parameters
-    ----------
-    RA / DC : Right Ascension / Declination, degress
-    e_RA / e_DC : formal uncertainty of RA / DC, micro-as.
-    Cor : correlation coeffient between RA and DC.
-
-    Suffix 'G' stands for GaiaDR1 and I for VLBI catalog.
-
-    Returns
-    ----------
-    X_a / X_d : normalized coordinate differences in RA / DC, unit-less
-    X : Normalized separations, unit-less.
-    '''
-
-    if arccof is None:
-        arccof = np.cos(np.deg2rad(DC1 / 3600.))
-
-    # deg -> uas
-    dRA = (RA1 - RA2) * 3.6e9 * arccof
-    dRA_err = np.sqrt(RA1_err**2 + RA2_err**2)
-    dDC = (DC1 - DC2) * 3.6e9
-    dDC_err = np.sqrt(DC1_err**2 + DC2_err**2)
-
-    pos_seps = np.sqrt(dRA**2 + dDC**2)
-
-    # Normalised coordinate difference
-    X_a = dRA / np.sqrt(RA1_err**2 + RA2_err**2)
-    X_d = dDC / np.sqrt(DC1_err**2 + DC2_err**2)
-
-    # Correlation coefficient of combined errors
-    C = (RA1_err * DC1_err * Cor1 +
-         RA2_err * DC2_err * Cor2) / (dRA_err * dDC_err)
-
-    # Normalised separation
-    X = np.zeros_like(X_a)
-
-    for i, (X_ai, X_di, Ci) in enumerate(zip(X_a, X_d, C)):
-
-        wgt = np.linalg.inv(np.mat([[1, Ci],
-                                    [Ci, 1]]))
-        Xmat = np.array([X_ai, X_di])
-        # Xi = np.sqrt(reduce(np.dot, (Xmat, wgt, Xmat)))
-        X[i] = np.sqrt(reduce(np.dot, (Xmat, wgt, Xmat)))
-
-    return X_a, X_d, X
+    return [soucom, flgcom,
+            RA1n, RAc_err1n, Dec1n, Dec_err1n, cor1n,
+            RA2n, RAc_err2n, Dec2n, Dec_err2n, cor2n]
 
 
 def position_diff_calc(dat1, dat2):
@@ -151,28 +155,28 @@ def position_diff_calc(dat1, dat2):
     Returns
     ----------
     dif : list, containing:
-            dRA : difference of RA, uas
-            dRA_err : formal uncertainty of dRA sqrt(RA_err1^2 + RA_err2^2), uas
-            dDC : difference of DC, uas
-            dDC_err : formal uncertainty of dDC sqrt(DC_err1^2 + DC_err2^2), uas
-            cov : covriance between dRA and dDC, uas ^2
+            dRAc : difference of \Detal_RA*cos(Dec), uas
+            dRAc_err : formal uncertainty of dRAc=sqrt(RAc_err1^2 + RAc_err2^2), uas
+            dDec : difference of DC, uas
+            dDec_err : formal uncertainty of dDec=sqrt(Dec_err1^2 + Dec_err2^2), uas
+            cov : covriance between dRAc and dDec, uas ^2
+            cof : correlation coeffient between dRAc and dDec
                 see Appendix B in Mignard et al 2016
     '''
 
-    RA1, RA_err1, DC1, DC_err1, cor1 = dat1
-    RA2, RA_err2, DC2, DC_err2, cor2 = dat2
-
-    arccof = np.cos(np.deg2rad(DC1))
+    RA1, RAc_err1, Dec1, Dec_err1, cor1 = dat1
+    RA2, RAc_err2, Dec2, Dec_err2, cor2 = dat2
 
     # deg -> uas
-    deg2uas = 3.6e9
-    dRA = (RA1 - RA2) * deg2uas * arccof
-    dRA_err = np.sqrt(RA_err1**2 + RA_err2**2)
-    dDC = (DC1 - DC2) * deg2uas
-    dDC_err = np.sqrt(DC_err1**2 + DC_err2**2)
-    cov = (cor1 * RA_err1 * DC_err1 + cor2 * RA_err2 * DC_err2)
+    dRAc = (RA1 - RA2) * 3.6e9
+    dDec = (Dec1 - Dec2) * 3.6e9
 
-    return [dRA, dRA_err, dDC, dDC_err, cov]
+    dRAc_err = np.sqrt(RAc_err1**2 + RAc_err2**2)
+    dDec_err = np.sqrt(Dec_err1**2 + Dec_err2**2)
+    cov = (cor1 * RAc_err1 * Dec_err1 + cor2 * RAc_err2 * Dec_err2)
+    cof = cov / dRAc_err / dDec_err
+
+    return [dRAc, dRAc_err, dDec  dDec_err, cov, cof]
 
 
 def sub_posplot(ax0, ax1, dRA, dRA_err, dDC, dDC_err, DC,
@@ -222,7 +226,7 @@ def post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC, tp,
     plt.close()
 
 
-def comparison_with_Gaia(sou, RAd, RA_err, DCd, DC_err, cor,
+def comparison_with_Gaia(sou, RA, RAc_err, Dec, Dec_err, cor,
                          catlab, datafile):
     '''Comparison between some catalog with Gaia DR1 qso solution.
 
@@ -230,9 +234,9 @@ def comparison_with_Gaia(sou, RAd, RA_err, DCd, DC_err, cor,
     ----------
     sou : array, string
         source name, ICRF designation
-    RA / DC : array, float
+    RA / Dec : array, float
         Right ascension / Declination of sources given in degrees.
-    RA_err / DC_err : array, float
+    RAc_err / Dec_err : array, float
         formal uncertainty of RA / DC, given in micro-as.
     cor : array, float
         corelation coffecients between RA and DC, unitless.
@@ -247,24 +251,22 @@ def comparison_with_Gaia(sou, RAd, RA_err, DCd, DC_err, cor,
     '''
 
     # Gaia DR1 source positions
-    soug, RAgd, DCgd, RA_errg, DC_errg, corg, flg = read_gaiadr1(
+    soug, RAg, Decg, RAc_errg, Dec_errg, corg, flg = read_gaiadr1(
         # "/home/nliu/Data/gaiadr1_icrf2_1.dat") # vlbi2
         "/Users/Neo/Astronomy/Data/catalogs/Gaia_cds/"
         "gaiadr1_icrf2_1.dat")  # My MacOS
 
     [soucom, flgcom,
-     RAdn, RA_errn, DCdn, DC_errn, corn,
-     RAgdn, RA_errgn, DCgdn, DC_errgn, corgn] = Xmatch(
-        sou, RAd, RA_err, DCd, DC_err, cor,
-        soug, RAgd, RA_errg, DCgd, DC_errg, corg, flg)
+     RA1n, RAc_err1n, Dec1n, Dec_err1n, cor1n,
+     RA2n, RAc_err2n, Dec2n, Dec_err2n, cor2n] = Xmatch(
+        sou, RA, RAc_err, Dec, Dec_err, cor,
+        soug, RAg, RAc_errg, Decg, Dec_errg, corg, flg)
 
-    dRAu, dRA_err, dDCu, dDC_err, cov = position_diff_calc(
-        [RAdn, RA_errn, DCdn, DC_errn, corn],
-        [RAgdn, RA_errgn, DCgdn, DC_errgn, corgn])
+    dRAc, dRAc_err, dDec, dDec_err, cov, cof = position_diff_calc(
+        [RAn, RAc_errn, Decn, Dec_errn, corn],
+        [RAgn, RAc_errgn, Decgn, Dec_errgn, corgn])
 
-    X_a, X_d, X = nor_sep_calc(
-        RAdn, DCdn, RA_errn, DC_errn, corn,
-        RAgdn, DCgdn, RA_errgn, DC_errgn, corgn)
+    pos_sep, X_a, X_d, X = nor_sep_calc(dRAc, dRAc_err, dDec, dDec_err, cof)
 
     # VSH analysis
     main_dir = "/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3"
@@ -288,7 +290,6 @@ def comparison_with_Gaia(sou, RAd, RA_err, DCd, DC_err, cor,
           file=FTEX)
 
     ###########################################
-    RArn, DCrn = np.deg2rad(RAdn), np.deg2rad(DCdn)  # Unit: rad
 
     print('###########################################', file=FLOG)
     print('###########################################', file=FTEX)
@@ -296,23 +297,24 @@ def comparison_with_Gaia(sou, RAd, RA_err, DCd, DC_err, cor,
     # print("# Fitting")
     RdRA1ig, RdDC1ig, RdRA2ig, RdDC2ig = catalog_comparison_VSH(
         datafile,
-        soucom, dRAu, dDCu, dRA_err, dDC_err, cov,
-        RArn, DCrn, flgcom, FLOG, FTEX, X_a, X_d, X)
+        soucom, dRAc, dDec, dRAc_err, dDec_err, cov,
+        np.deg2rad(RAn), np.deg2rad(Decn), flgcom, FLOG, FTEX,
+        pos_sep, X_a, X_d, X)
 
     # Write the post-fitting residual.
     FLG = (flgcom == 'D')
     # Boolean -> int, 1 for defining source while 0 for non-def
     FLG = FLG.astype(int)
     # the 1st degree
-    write_residual(RAdn, DCdn, dRA_err, dDC_err, RdRA1ig, RdDC1ig, FLG,
+    write_residual(RAdn, DCdn, dRAc_err, dDec_err, RdRA1ig, RdDC1ig, FLG,
                    '%s/logs/%s_vsh.res1' % (main_dir, label))
     # the first two degrees
-    write_residual(RAdn, DCdn, dRA_err, dDC_err, RdRA2ig, RdDC2ig, FLG,
+    write_residual(RAdn, DCdn, dRAc_err, dDec_err, RdRA2ig, RdDC2ig, FLG,
                    '%s/logs/%s_vsh.res2' % (main_dir, label))
 
     # Plot the position differences
-    post_diff_plot(dRAu / 1.e3, dRA_err / 1.e3,
-                   dDCu / 1.e3, dDC_err / 1.e3, DCdn,
+    post_diff_plot(dRAc / 1.e3, dRAc_err / 1.e3,
+                   dDec / 1.e3, dDec_err / 1.e3, DCdn,
                    flgcom, main_dir, label)
 
     print('Done!')
