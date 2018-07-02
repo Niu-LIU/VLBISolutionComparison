@@ -29,7 +29,7 @@ from read_sou import read_sou_pos
 from nor_sep import nor_sep_calc
 from Transformation_cat import catalog_transfor
 from VSH_analysis import vsh_analysis
-cos = np.cos
+from numpy import cos
 deg2as = 3.6e3
 
 __all__ = ["read_gaidadr1", "position_taken", "Xmatch",
@@ -177,7 +177,7 @@ def position_diff_calc(dat1, dat2):
     Returns
     ----------
     dif : list, containing:
-            dRAc : difference of \Detal_RA*cos(Dec), uas
+            dRAc : difference of \\Detal_RA*cos(Dec), uas
             dRAc_err : formal uncertainty of dRAc=sqrt(RAc_err1^2 + RAc_err2^2), uas
             dDec : difference of DC, uas
             dDec_err : formal uncertainty of dDec=sqrt(Dec_err1^2 + Dec_err2^2), uas
@@ -228,14 +228,14 @@ def post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC, tp, main_dir, lab):
                     dDC[cond], dDC_err[cond],
                     DC[cond], soutp, mk)
 
-    ax0.set_ylabel("$\Delta \\alpha^* (%s)$" % unit)
+    ax0.set_ylabel("$\\Delta \\alpha^* (%s)$" % unit)
     ax0.set_ylim([-lim, lim])
 
     # ax1.errorbar(DC, dDC, yerr=dDC_err, fmt='.', elinewidth=0.01,
     #              markersize=1)
-    ax1.set_ylabel("$\Delta \delta (%s)$" % unit)
+    ax1.set_ylabel("$\\Delta \\delta (%s)$" % unit)
     ax1.set_ylim([-lim, lim])
-    ax1.set_xlabel("Dec. (deg)")
+    ax1.set_xlabel("Declination (deg)")
     ax1.set_xlim([-90, 90])
 
     plt.tight_layout()
@@ -251,7 +251,7 @@ def sol_Gaia_diff_calc(cat, catdif, sollab):
 
     Paramters
     ---------
-    cat : filename with path of the .sou file of a VLBI solution
+    cat : filename with path of the .cat file of a VLBI solution
     catdif : filename with path into whom the psotional differences will
             be written.
     sollab : solution label.
@@ -269,8 +269,9 @@ def sol_Gaia_diff_calc(cat, catdif, sollab):
     flgcom : source type flags
     '''
 
-    sou1, RA1, RAc_err1, Dec1, Dec_err1, cor1 = read_sou_pos(
-        cat, unit_deg=True, arcerr=True)
+    sou1 = np.genfromtxt(cat, dtype=str, usecols=(0,))
+    RA1, Dec1, RAc_err1, Dec_err1, cor1 = np.genfromtxt(
+        cat, usecols=range(2, 7), unpack=True)
     # mas -> uas
     RAc_err1 = RAc_err1 * 1.e3
     Dec_err1 = Dec_err1 * 1.e3
@@ -290,33 +291,33 @@ def sol_Gaia_diff_calc(cat, catdif, sollab):
         [RA1n, RAc_err1n, Dec1n, Dec_err1n, cor1n],
         [RA2n, RAc_err2n, Dec2n, Dec_err2n, cor2n])
 
-    pos_sep, X_a, X_d, X = nor_sep_calc(dRAc, dRAc_err, dDec, dDec_err, cof)
+    # pos_sep, X_a, X_d, X = nor_sep_calc(dRAc, dRAc_err, dDec, dDec_err, cof)
+    pos_sep, X_a, X_d, X, X2 = nor_sep_calc(dRAc, dRAc_err,
+                                            dDec, dDec_err, cof)
 
     fdif = open(catdif, "w")
 
     print("# Position difference between two catalogs:\n"
           "# %s \n# GaiaDR1" % cat, file=fdif)
     print("# Sou  RA  Dec  dRAc  dRAcerr  dDec  dDecerr  COV  "
-          "pos_sep  X_a  X_d  X  flag\n"
+          "pos_sep  X_a  X_d  X  X2  flag\n"
           "#      deg deg  uas   uas      uas   uas     uas^2"
-          "uas\n"
-          "# X_a/X_d are normalized \n"
+          " uas\n"
+          "# X_a/X_d are normalized.\n"
+          "# X/X2 are Mignard's and normal normalized seperations.\n"
           "# For flag, 'D', 'V', and 'N' are same as in ICRF2, "
           "'O' for non-icrf2 source", file=fdif)
 
     # for i, soui in enumerate(soucom):
     for (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri,
-         covi, pos_sepi, X_ai, X_di, Xi, flgcomi) in zip(
+         covi, pos_sepi, X_ai, X_di, Xi, X2i, flgcomi) in zip(
             soucom, RA1n, Dec1n, dRAc, dRAc_err, dDec, dDec_err, cov,
-            pos_sep, X_a, X_d, X, flgcom):
+            pos_sep, X_a, X_d, X, X2, flgcom):
 
-        print("%9s  %14.10f  %14.10f  %+10.1f  %10.1f  %+10.1f  %10.1f  "
-              "%14.1f  %+10.1f  %+8.3f  %+8.3f  %+8.3f  %s" %
-              (soui, RA1ni, Dec1ni,
-               dRAci, dRAc_erri, dDeci, dDec_erri, covi,
-               pos_sepi, X_ai, X_di, Xi,
-               flgcomi),
-              file=fdif)
+        print("%9s  %14.10f  %+14.10f  %10.1f  %10.1f  %+10.1f  %10.1f  "
+              "%14.1f  %+10.1f  %+8.3f  %+8.3f  %8.3f  %8.3f  %s" %
+              (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri, covi,
+               pos_sepi, X_ai, X_di, Xi, X2i, flgcomi), file=fdif)
 
     fdif.close()
 
@@ -332,7 +333,7 @@ def sol_Gaia_diff_calc(cat, catdif, sollab):
             pos_sep, X_a, X_d, X, flgcom]
 
 
-def solution_Gaia_diff_analysis(datadir, datafile, sollab):
+def solution_GaiaDR1_analysis(datadir, datafile, sollab):
     '''Comparison between the VLBI solution and Gaia DR1
     '''
 
@@ -343,19 +344,21 @@ def solution_Gaia_diff_analysis(datadir, datafile, sollab):
     # DiffData = [soucom, RAdeg, DCdeg, dRA, dRA_err, dDC, dDC_err, cov,
     #             pos_sep, X_a, X_d, X, flgcom]
 
-    # IERS transformation parameter
-    print("# IERS transformation:")
-    # catalog_transfor(catdif, datadir, "%s_GaiaDR1" % sollab)
-    catalog_transfor(DiffData,
-                     "%s/%s_Gaiadr1_dif.sou" % (datadir, datafile[:-4]),
-                     datadir, "%s_GaiaDR1" % sollab)
+    # # IERS transformation parameter
+    # print("# IERS transformation:")
+    # # catalog_transfor(catdif, datadir, "%s_GaiaDR1" % sollab)
+    # catalog_transfor(DiffData,
+    #                  "%s/%s_Gaiadr1_dif.sou" % (datadir, datafile[:-4]),
+    #                  label="%s_GaiaDR1" % sollab)
+    # # datadir, "%s_GaiaDR1" % sollab)
 
     # VSH function parameters
     print("# VSH analysis:")
     # vsh_analysis(catdif, datadir, "%s_GaiaDR1" % sollab)
     vsh_analysis(DiffData,
                  "%s/%s_Gaiadr1_dif.sou" % (datadir, datafile[:-4]),
-                 datadir, "%s_GaiaDR1" % sollab)
+                 label="%s_GaiaDR1" % sollab)
+    # datadir, "%s_GaiaDR1" % sollab)
 
 
 def test_code():

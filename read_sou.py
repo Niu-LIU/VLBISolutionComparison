@@ -61,7 +61,7 @@ import sys
 from pos_conv import RA_conv, DC_conv
 from time_conv import date2year
 
-__all__ = ['read_sou', 'read_sou_pos']
+__all__ = ['read_sou', 'read_sou_pos', "read_cat"]
 
 
 # ------------------------------  FUNCTIONS  ---------------------------
@@ -174,6 +174,43 @@ def read_sou_pos(datafile, unit_deg=True, arcerr=True):
      DateBeg, DateEnd] = read_sou(datafile, unit_deg, arcerr)
 
     return [sou, RA, RA_err, DC, DC_err, cor]
+
+
+def read_cat(catfile):
+    '''Retrieve position information from .cat file.
+
+    Parameters
+    ----------
+    catfile : string
+        name of data file with full path
+
+    Returns
+    ----------
+    ivs_name/iers_name : array, string
+        IVS/IERS source name
+    RA : array, float
+        Right ascension, as
+    RA_err : array, float
+        formal uncertainty of RA, mas
+    DC : array, float
+        Declination, as
+    DC_err : array, float
+        formal uncertainty of DC, mas
+    corr : array, float
+        correlation between RA and DC
+    num_ses/num_obs : array, int
+        number of sessions/observations a source was observed
+    '''
+
+    ivs_name, iers_name = np.genfromtxt(catfile, dtype=str,
+                                        usecols=(0, 1), unpack=True)
+    RA, Dec, RAc_err, Dec_err, corr = np.genfromtxt(
+        catfile, usecols=range(2, 7), unpack=True)
+    num_ses, num_obs = np.genfromtxt(catfile, usecols=range(10, 12),
+                                     dtype=int, unpack=True)
+
+    return [ivs_name, iers_name, RA, Dec, RAc_err, Dec_err, corr,
+            num_ses, num_obs]
 
 
 # # Retrieve estimates.

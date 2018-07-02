@@ -181,7 +181,7 @@ def position_diff_calc(dat1, dat2):
     Returns
     ----------
     dif : list, containing:
-            dRAc : difference of \Detal_RA*cos(Dec), uas
+            dRAc : difference of Detal_RA*cos(Dec), uas
             dRAc_err : formal uncertainty of dRAc=sqrt(RAc_err1^2 + RAc_err2^2), uas
             dDec : difference of DC, uas
             dDec_err : formal uncertainty of dDec=sqrt(Dec_err1^2 + Dec_err2^2), uas
@@ -237,12 +237,12 @@ def post_diff_plot(dRA, dRA_err, dDC, dDC_err, DC, tp, main_dir, sollab):
                     dDC[cond], dDC_err[cond],
                     DC[cond], soutp, mk)
 
-    ax0.set_ylabel("$\Delta \\alpha^* (%s)$" % unit)
+    ax0.set_ylabel("$\\Delta \\alpha^* (%s)$" % unit)
     ax0.set_ylim([-lim, lim])
 
     # ax1.errorbar(DC, dDC, yerr=dDC_err, fmt='.', elinewidth=0.01,
     #              markersize=1)
-    ax1.set_ylabel("$\Delta \delta (%s)$" % unit)
+    ax1.set_ylabel("$\\Delta \\delta (%s)$" % unit)
     ax1.set_ylim([-lim, lim])
     ax1.set_xlabel("Dec. (deg)")
     ax1.set_xlim([-90, 90])
@@ -260,7 +260,7 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
 
     Paramters
     ---------
-    cat : filename with path of the .sou file of a VLBI solution
+    cat : filename with path of the .cat file of a VLBI solution
     catdif : filename with path into whom the psotional differences will
             be written.
     sollab : solution label.
@@ -278,11 +278,21 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
     flgcom : source type flags
     '''
 
-    sou1, RA1, RAc_err1, Dec1, Dec_err1, cor1 = read_sou_pos(
-        cat, unit_deg=True, arcerr=True)
-    # mas -> uas
-    RAc_err1 = RAc_err1 * 1.e3
-    Dec_err1 = Dec_err1 * 1.e3
+    # sou1, RA1, RAc_err1, Dec1, Dec_err1, cor1 = read_sou_pos(
+    #     cat, unit_deg=True, arcerr=True)
+    sou1 = np.genfromtxt(cat, dtype=str, usecols=(0,))
+    RA1, Dec1, RAc_err1, Dec_err1, cor1 = np.genfromtxt(
+        cat, usecols=range(2, 7), unpack=True)
+
+    # # mas -> uas
+    # RAc_err1 = RAc_err1 * 1.e3
+    # Dec_err1 = Dec_err1 * 1.e3
+
+    #
+    # ra_err = RAc_err1[RAc_err1 == 0.0]
+    # sou = sou1[RAc_err1 == 0.0]
+    # print(ra, sou)
+    # exit()
 
     sou2, RA2, Dec2, RAc_err2, Dec_err2, cor2, flg = read_icrf2(
         # "/home/nliu/Data/icrf2.dat") # vlbi2
@@ -300,6 +310,8 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
 
     pos_sep, X_a, X_d, X = nor_sep_calc(
         dRAc, dRAc_err, dDec, dDec_err, cof)
+    # pos_sep, X_a, X_d, X, X2 = nor_sep_calc(
+    #     dRAc, dRAc_err, dDec, dDec_err, cof)
 
     fdif = open(catdif, "w")
 
@@ -314,12 +326,21 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
           "'O' for non-icrf2 source", file=fdif)
 
     # for i, soui in enumerate(soucom):
+    # for (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri,
+    #      covi, pos_sepi, X_ai, X_di, Xi, X2i, flgcomi) in zip(
+    #         soucom, RA1n, Dec1n, dRAc, dRAc_err, dDec, dDec_err, cov,
+    #         pos_sep, X_a, X_d, X, X2, flgcom):
+    #     print("%9s  %14.10f  %14.10f  %+8.1f  %8.1f  %+8.1f  %8.1f  "
+    #           "%14.1f  %+10.1f  %+8.3f  %+8.3f  %8.3f  %8.3f  %s" %
+    #           (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri, covi,
+    #            pos_sepi, X_ai, X_di, Xi, X2i, flgcomi), file=fdif)
+
     for (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri,
          covi, pos_sepi, X_ai, X_di, Xi, flgcomi) in zip(
             soucom, RA1n, Dec1n, dRAc, dRAc_err, dDec, dDec_err, cov,
             pos_sep, X_a, X_d, X, flgcom):
         print("%9s  %14.10f  %14.10f  %+8.1f  %8.1f  %+8.1f  %8.1f  "
-              "%14.1f  %+10.1f  %+8.3f  %+8.3f  %+8.3f  %s" %
+              "%14.1f  %+10.1f  %+8.3f  %+8.3f  %8.3f  %s" %
               (soui, RA1ni, Dec1ni, dRAci, dRAc_erri, dDeci, dDec_erri, covi,
                pos_sepi, X_ai, X_di, Xi, flgcomi), file=fdif)
 
@@ -327,17 +348,17 @@ def sol_icrf2_diff_calc(cat, catdif, sollab):
 
     # main_dir = "/home/nliu/solutions/GalacticAberration" # vlbi2
     # main_dir = "/Users/Neo/Astronomy/Works/201711_GDR2_ICRF3"  # My MacOS
-    main_dir = path.dirname(cat)
-    post_diff_plot(dRAc / 1.e3, dRAc_err / 1.e3,
-                   dDec / 1.e3, dDec_err / 1.e3, Dec1n,
-                   flgcom, main_dir, sollab)
+    # main_dir = path.dirname(cat)
+    # post_diff_plot(dRAc / 1.e3, dRAc_err / 1.e3,
+    #                dDec / 1.e3, dDec_err / 1.e3, Dec1n,
+    #                flgcom, main_dir, sollab)
 
     return [soucom, RA1n, Dec1n,
             dRAc, dRAc_err, dDec, dDec_err, cov,
             pos_sep, X_a, X_d, X, flgcom]
 
 
-def solution_icrf2_diff_analysis(datadir, datafile, sollab):
+def solution_icrf2_analysis(datadir, datafile, sollab):
     '''Compare the VLBI solution with ICRF2 solution.
 
     The comparison is done by two methods:
@@ -362,19 +383,21 @@ def solution_icrf2_diff_analysis(datadir, datafile, sollab):
                                    (datadir, datafile[:-4]),
                                    "%s_icrf2" % sollab)
 
-    # IERS transformation parameters.
-    print("# IERS transformation:")
-    # catalog_transfor(catdif, datadir, "%s_icrf2" % sollab)
-    catalog_transfor(DiffData,
-                     "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4]),
-                     datadir, "%s_icrf2" % sollab)
+    # # IERS transformation parameters.
+    # print("# IERS transformation:")
+    # # catalog_transfor(catdif, datadir, "%s_icrf2" % sollab)
+    # catalog_transfor(DiffData,
+    #                  "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4]),
+    #                  label="%s_icrf2" % sollab)
+    # # datadir, "%s_icrf2" % sollab)
 
     # VSH function parameters.
     print("# VSH analysis:")
     # vsh_analysis(catdif, datadir, "%s_icrf2" % sollab)
     vsh_analysis(DiffData,
                  "%s/%s_icrf2_dif.sou" % (datadir, datafile[:-4]),
-                 datadir, "%s_icrf2" % sollab)
+                 label="%s_icrf2" % sollab)
+    # datadir, "%s_icrf2" % sollab)
 
 # Test
 # cat = "/home/nliu/solutions/test/a1/result_a1.sou"

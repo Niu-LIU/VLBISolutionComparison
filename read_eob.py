@@ -216,35 +216,106 @@ def read_eob(datafile):
             corXY, corXU, corYU, corXUR, corYUR, corUUR,
             tag_nut, P, P_err, E, E_err, corPE]
 
+
+def read_eops(eops_file):
+    """Read data from .eops file.
+
+    Parameters
+    ----------
+    datafile : string
+        name of data file
+
+    Returns
+    ----------
+    db_name : array, string
+       database name with leading dollar sign
+    mjd : array, float
+        reference epoch, modified Julian data
+    obs_num : array, int
+        number of observations used
+    sess_len : array, float
+        session duration
+    rms : array, float
+        postfit rms delay in ps
+    xp : array, float
+        X-pole coordinate, mas
+    xp_err : array, float
+        formal uncertainty of xp, mas
+    yp : array, float
+        Y-pole coordinate, mas
+    yp_err : array, float
+        formal uncertainty of yp, mas
+    ut : array, float
+        UT1 - TAI, mas
+    ut_err : array, float
+        formal uncertainty of ut, mas
+    xpr : array, float
+        X-pole coordinate rate, mas/day
+    xpr_err : array, float
+        formal uncertainty of xpr, mas/day
+    ypr : array, float, mas/day
+        Y-pole coordinate rate, mas/day
+    ypr_err : array, float
+        formal uncertainty of ypr, mas/day
+    utr : array, float
+        UT1 - TAI rate, mas/day
+    utr_err : array, float
+        formal uncertainty of utr, mas/day
+    dx : array, float
+        Celestial pole offset dX wrt IAU 2006, mas
+    dx_err : array, float
+        formal uncertainty of dX, mas
+    dy : array, float
+        Celestial pole offset dY wrt IAU 2006, mas
+    dy_err : array, float
+        formal uncertainty of dY, mas
+    xp_yp_corr : array, float
+        correlation between xp and yp
+    xp_ut_corr : array, float
+        correlation between xp and ut
+    yp_ut_corr : array, float
+        correlation between yp and ut
+    dx_dy_corr : array, float
+        correlation between dx and dy
+    """
+
+    db_name = np.genfromtxt(eops_file, usecols=(11,), dtype=str)
+
+    mjd, sess_len, rms = np.genfromtxt(
+        eops_file, usecols=(0, 18, 29), unpack=True)
+
+    obs_num = np.genfromtxt(
+        eops_file, usecols=(16,), dtype=int, unpack=True)
+
+    # Earth orientation parameters
+    xp, yp, ut, dx, dy = np.genfromtxt(
+        eops_file, usecols=range(1, 6), unpack=True)
+    xp_err, yp_err, ut_err, dx_err, dy_err = np.genfromtxt(
+        eops_file, usecols=range(6, 11), unpack=True)
+
+    # Correlation
+    xp_yp_corr, xp_ut_corr, yp_ut_corr, dx_dy_corr = np.genfromtxt(
+        eops_file, usecols=range(12, 16), unpack=True)
+
+    # EOP rate
+    xpr, ypr, utr = np.genfromtxt(
+        eops_file, usecols=range(19, 22), unpack=True)
+    xpr_err, ypr_err, utr_err = np.genfromtxt(
+        eops_file, usecols=range(24, 27), unpack=True)
+
+    return [db_name, mjd, obs_num, sess_len, rms,
+            xp, yp, ut, dx, dy,
+            xp_err, yp_err, ut_err, dx_err, dy_err,
+            xp_yp_corr, xp_ut_corr, yp_ut_corr, dx_dy_corr,
+            xpr, ypr, utr, xpr_err, ypr_err, utr_err]
+
+
 # ------------------------------  MAIN BODY  ---------------------------
-# Retrieve estimates.
-# [dbname, obsnum, tag_eop, X, X_err, Y, Y_err, U, U_err,
-#  XR, XR_err, YR, YR_err, UR, UR_err,
-#  corXY, corXU, corYU, corXUR, corYUR, corUUR,
-#  tag_nut, P, P_err, E, E_err, corPE] = read_eob(
-#     "/home/nliu/solutions/test/GA/opa2017a_aprx.eob")
-#
-# # Plot it.
-# # EOP
-# fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, sharex=True)
-# ax0.errorbar(tag_eop, X, yerr=X_err, fmt='.')
-# ax0.set_title("X-pole")
-# ax0.set_ylim([-500, 500])
-# ax1.errorbar(tag_eop, Y, yerr=Y_err, fmt='.')
-# ax1.set_title("Y-pole")
-# ax1.set_ylim([-200, 800])
-# ax2.errorbar(tag_eop, U, yerr=U_err, fmt='.')
-# ax2.set_title("UT1-TAI")
-# plt.savefig("figures/eob_eop.eps")
-# plt.close()
-# # Nutation
-# fig, (ax0, ax1) = plt.subplots(nrows=2, sharex=True)
-# ax0.errorbar(tag_nut, P, yerr=P_err, fmt='.')
-# ax0.set_title("Nutation longitude")
-# ax0.set_ylim([-200, 200])
-# ax1.errorbar(tag_nut, E, yerr=E_err, fmt='.')
-# ax1.set_title("Nutation obliquity")
-# ax1.set_ylim([-200, 200])
-# plt.savefig("figures/eob_nut.eps")
-# plt.close()
+# # Retrieve estimates.
+# dat1 = read_eops("/Users/Neo/Astronomy/Data/VLBISolutions/"
+#                  "vlbi2_server/GA-eop/opa2018r.eops-SL")
+# dat2 = read_eops("/Users/Neo/Astronomy/Data/VLBISolutions/"
+#                  "vlbi2_server/GA-eop/opa2018r.eops")
+# for (dat1i, dat2i) in zip(dat1, dat2):
+#     print(dat1i[0], dat2i[0])
 # ------------------------------ END -----------------------------------

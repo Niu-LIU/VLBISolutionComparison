@@ -17,6 +17,7 @@ N. Liu, 27/04/2018: Add IVS source name, ICRF designation, and IERS
 import numpy as np
 import time
 import sys
+import os
 from astropy.io import fits
 from read_sou import read_sou_pos
 from souname_xmatch import find_sou_designation
@@ -40,15 +41,14 @@ def sou2fits(ifile, ofile=None):
     None
     '''
 
-    sou, RAas, RA_err, DCas, DC_err, cor = read_sou_pos(ifile)
+    # First eliminate the sources with 0 observations
+    os.system("~/Astronomy/Works/201711_GDR2_ICRF3/progs/sou_elim %s"
+              % ifile)
+
+    # Read file
+    sou, RA, RA_err, DC, DC_err, corr = read_sou_pos(ifile)
 
     IVS, ICRF, IERS = find_sou_designation(sou, "IVS")
-
-    # as -> deg
-    RA = RAas / 3.6e3
-    DC = DCas / 3.6e3
-
-    RA_err = RA_err * np.cos(np.deg2rad(DC))
 
     if ofile is None:
         ofile = "%s.fits" % ifile[:-4]
@@ -60,14 +60,16 @@ def sou2fits(ifile, ofile=None):
           "Output file:   %s" % (ifile, ofile))
 
     tbhdu = fits.BinTableHDU.from_columns([
-        fits.Column(name="souname_IVS", format='A8', array=IVS),
-        fits.Column(name="souname_ICRF", format='A16', array=ICRF),
-        fits.Column(name="souname_IERS", format='A8', array=IERS),
-        fits.Column(name='ra', format='F16.12', unit='deg', array=RA),
-        fits.Column(name='dec', format='F16.12', unit='deg', array=DC),
-        fits.Column(name='ra_err', format='F10.4', unit='mas', array=RA_err),
-        fits.Column(name='de_cerr', format='F10.4', unit='mas', array=DC_err),
-        fits.Column(name='ra_dec_corr', format='F6.3', array=cor)])
+        fits.Column(name="ivs_sourcename", format='A8', array=IVS),
+        # fits.Column(name="icrf_sourcename", format='A16', array=ICRF),
+        fits.Column(name="iers_sourcename", format='A8', array=IERS),
+        fits.Column(name='ra_vlbi', format='F16.12', unit='deg', array=RA),
+        fits.Column(name='dec_vlbi', format='F16.12', unit='deg', array=DC),
+        fits.Column(name='ra_err_vlbi', format='F10.4',
+                    unit='mas', array=RA_err),
+        fits.Column(name='de_cerr_vlbi', format='F10.4',
+                    unit='mas', array=DC_err),
+        fits.Column(name='ra_dec_corr_vlbi', format='F6.3', array=corr)])
 
 # header information of FITS
     prihdr = fits.Header()
@@ -88,11 +90,12 @@ def test_code():
 
 # -------------------------------- MAIN --------------------------------
 if len(sys.argv) is 2:
-    solufits(sys.argv[1])
+    sou2fits(sys.argv[1])
 elif len(sys.argv) is 3:
-    solufits(sys.argv[1], sys.argv[2])
+    sou2fits(sys.argv[1], sys.argv[2])
 else:
     exit()
+
 # Test code
 # test_code()
 # --------------------------------- END --------------------------------

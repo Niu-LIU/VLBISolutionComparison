@@ -54,7 +54,9 @@ def parameter_calc(x, y, y_err):
     # formal error for par
     A_inv = np.linalg.inv(A)
     err = np.sqrt(np.diag(A_inv))
-    print("Covariance matrix: ", A_inv)
+
+    # print("Covariance matrix: \n", A_inv)
+
     # correlation coeffiences
     corrcoef = np.array([A_inv[i, j] / err[i] / err[j]
                          for j in range(par.size) for i in range(par.size)])
@@ -137,12 +139,18 @@ def test_code():
     print('Unweighted fitting:')
     z1 = np.polyfit(x, y, 1)
     print('Using the library function:', z1)
-    par, _, _, _ = linear_regression_unitwgt(x, y)
-    print('Using the script I wrote: ', par)
+    par, errp, _, _ = linear_regression_unitwgt(x, y)
+    print("Using the script I wrote: \n"
+          "  Estimatation: ", par, "\n"
+          "  Uncertainty: ", errp)
     m, c, r_value, p_value, std_err = stats.linregress(x, y)
     print('Using scipy: ', m)
     par, pcov = curve_fit(flinear, x, y, p0, absolute_sigma=True)
-    print('Using curve_fit: ', par)
+    # par, pcov = curve_fit(flinear, x, y, p0)
+    errp = np.sqrt(np.diag(pcov))
+    print("Using curve_fit: \n"
+          "  Parameter", par, "\n"
+          "  Uncertainty: ", errp)
     print(pcov)
 
     print('Weighted fitting:')
@@ -170,5 +178,5 @@ def test_code():
     # The result shows the script I wrote performs well.
 
 
-test_code()
+# test_code()
 # -------------------- END -----------------------------------

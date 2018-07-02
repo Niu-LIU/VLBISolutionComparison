@@ -51,18 +51,18 @@ def nutation_offset_stat(EOB_file):
     LOG_file = data_fil.replace(".eob", "_nut.log")
     flog = open("%s/logs/%s" % (data_dir, LOG_file), "w")
 
-# units are changed on 31 JAN 2018.
+    # units are changed on 31 JAN 2018.
     dX, dX_err = dX * 1.e3, dX_err * 1.e3
     dY, dY_err = dY * 1.e3, dY_err * 1.e3
 
     # Statistics for all-time series
     print("For all-time:", file=flog)
-# units are changed on 31 JAN 2018.
+    # units are changed on 31 JAN 2018.
     # print("dX (mas):", file=flog)
     print("dX (uas):", file=flog)
     stats_calc(epo, dX, dX_err, flog)
 
-# units are changed on 31 JAN 2018.
+    # units are changed on 31 JAN 2018.
     # print("dY: (mas)", file=flog)
     print("dY: (uas)", file=flog)
     stats_calc(epo, dY, dY_err, flog)

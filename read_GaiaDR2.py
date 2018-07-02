@@ -72,6 +72,39 @@ def read_gaiadr2_fits(datafile):
             frame_rotator_object_type, matched_observations]
 
 
+def read_gaiadr2_iers_position(datafile):
+    '''Read Gaia DR2 data file.
+
+    Parameters
+    ----------
+    datafile : string
+        Gaia DR2 file with the full path. The format is FITS.
+
+    Returns
+    ----------
+
+    '''
+
+    hdulist = fits.open(datafile, memmap=True)
+    tbdat = hdulist[1].data
+
+    # source_id = tbdat.field("source_id")
+    # ref_epoch = tbdat.field("ref_epoch")
+    iers_name = tbdat.field("iers_name")
+    ra = tbdat.field("ra")
+    ra_error = tbdat.field("ra_error")
+    dec = tbdat.field("dec")
+    dec_error = tbdat.field("dec_error")
+    ra_dec_corr = tbdat.field("ra_dec_corr")
+
+    # Test
+    # print(source_id)
+    # print(source_id.size)
+    # return frame_rotator_object_type
+
+    return iers_name, ra, ra_error, dec, dec_error, ra_dec_corr
+
+
 def read_gaiadr2_ascii(datafile):
     '''Read Gaia DR2 data file.
 
@@ -109,8 +142,8 @@ def test_code():
      parallax_pmra_corr, parallax_pmdec_corr, pmra_pmdec_corr,
      phot_g_mean_mag, phot_bp_mean_mag, phot_rp_mean_mag,
      frame_rotator_object_type, matched_observations] = read_gaiadr2_fits(
-        # "/Users/Neo/Astronomy/Data/catalogs/Gaia_DR2/gaiadr2_qso_all.fits")
-        "gaiadr2_qso_all.fits")
+        "/Users/Neo/Astronomy/Data/catalogs/Gaia_DR2/gaiadr2_qso_all.fits")
+    # "gaiadr2_qso_all.fits") # For test on server
 
     # # For frame_rotator_object_type
     # print("Number of dataset: %10d" % frame_rotator_object_type.size)
@@ -162,42 +195,75 @@ def test_code():
     """
 
     from vsh_deg1_cor import VSHdeg01_fitting
+    import datetime
+
+    # max_num = np.arange(1000, 50000, 1000)
+    # run_time = np.zeros_like(max_num)
 
     # Log file.
-    # flog = open('../logs/GaiaCRF2_test_vsh01.log', 'w')
-    flog = open('GaiaCRF2_test_vsh01.log', 'w')
+    flog = open('../logs/GaiaCRF2_test_vsh01.log', 'w')
+    # flog = open('GaiaCRF2_test_vsh01.log', 'w')  # For test on server
 
     # degree -> rad
     ra_rad, dec_rad = np.deg2rad(ra), np.deg2rad(dec)
     # Full 6-parameters
-    print('VSH deg01:')
+    # print('VSH deg01:')
     w, sig, corrcoef, _, _, _ = VSHdeg01_fitting(
         pmra, pmdec, pmra_error, pmdec_error, ra_rad, dec_rad,
-        flog, cov=pmra_pmdec_corr, elim_flag="None")
+        flog, cov=pmra_pmdec_corr*pmra_error*pmdec_error,
+        elim_flag="None")
+
     print("Estimations: ")
     print("Dipole:   ", w[:3])
     print("          ", sig[:3])
     print("Rotation: ", w[3:])
     print("          ", sig[3:])
     # print('sigma: ', sig)
-    # print("correlation: ", corrcoef)
+    print("correlation: ", corrcoef)
+    '''output
+    Estimations:
+    Dipole:    [-0.00702013  0.00465856  0.0121467 ]
+               [0.00072152 0.00067442 0.00067208]
+    Rotation:  [-0.00357653 -0.00224101 -0.00092421]
+               [0.0007353  0.00064518 0.00080465]
+    correlation:
+    [[ 1.00000000e+00  5.76827353e-02 -8.88503550e-02 -1.47700531e-02
+      -3.02289216e-02  4.51743055e-02]
+     [ 5.76827353e-02  1.00000000e+00 -2.77233167e-02  1.74718608e-02
+      -9.89511794e-04  6.65720258e-03]
+     [-8.88503550e-02 -2.77233167e-02  1.00000000e+00 -5.02517072e-02
+      -4.16227579e-02  2.23532319e-02]
+     [-1.47700531e-02  1.74718608e-02 -5.02517072e-02  1.00000000e+00
+       1.28544582e-01 -3.34799839e-01]
+     [-3.02289216e-02 -9.89511794e-04 -4.16227579e-02  1.28544582e-01
+       1.00000000e+00 -1.92617582e-01]
+     [ 4.51743055e-02  6.65720258e-03  2.23532319e-02 -3.34799839e-01
+      -1.92617582e-01  1.00000000e+00]]
+    '''
 
     # Only rotation(spin)
-    print('VSH deg01:')
+    print('VSH deg01 (only rotation):')
     w, sig, corrcoef, _, _, _ = VSHdeg01_fitting(
         pmra, pmdec, pmra_error, pmdec_error, ra_rad, dec_rad,
-        flog, cov=pmra_pmdec_corr, elim_flag="None", fit_type="rotation")
+        flog, cov=pmra_pmdec_corr*pmra_error*pmdec_error,
+        elim_flag="None", fit_type="rotation")
     print("Estimations: ")
-    print("Dipole:   ", w[:3])
-    print("          ", sig[:3])
-    print("Rotation: ", w[3:])
-    print("          ", sig[3:])
+    print("Rotation: ", w)
+    print("          ", sig)
     # print('sigma: ', sig)
-    # print("correlation: ", corrcoef)
+    print("correlation: ", corrcoef)
+    '''output
+    Rotation:    [-0.00312404 -0.00193361 -0.00096809]
+                 [0.00073412 0.00064424 0.00080354]
+    correlation:
+    [[ 1.          0.12618357 -0.33383656]
+     [ 0.12618357  1.         -0.19061228]
+     [-0.33383656 -0.19061228  1.        ]]
+    '''
 
     flog.close()
     print("Done!")
 
 
-test_code()
+# test_code()
 # --------------------------------- END --------------------------------

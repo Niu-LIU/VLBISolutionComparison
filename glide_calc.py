@@ -14,8 +14,11 @@ N.Liu, 20 Mar 2018:
 """
 
 import numpy as np
-cos = np.cos
-sin = np.sin
+from numpy import cos, sin
+
+
+__all__ = ["glide_gen", "glide_calc", "GA_glide_decomposed",
+           "glide_field_gen"]
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -142,14 +145,51 @@ def glide_calc(gv, err_gv=None):
         errA = np.sqrt(np.dot(par_g**2, err_gv**2))
         errRAr = np.sqrt(np.dot(par_RA**2, err_gv**2))
         errDCr = np.sqrt(np.dot(par_DC**2, err_gv**2))
+
         # --------------- 20 Mar 2018 ----------------------------------
         # errA = np.sqrt(np.dot(err_gv, err_gv))
         # --------------- 20 Mar 2018 ----------------------------------
+
         # radian -> degree
         errRA = np.rad2deg(errRAr)
         errDC = np.rad2deg(errDCr)
 
         return g, RAdeg, DCdeg, errA, errRA, errDC
+
+
+def GA_glide_decomposed(gv, err_gv):
+    """Given a glide vector, get the GA component and non-GA component.
+
+
+    'G' stands for amplitude while 'g' for vector
+
+    Parameters
+    ----------
+    gv : array of float
+        glide vector
+    err_gv : array of float
+        formal error of glide vector
+
+    Returns
+    ----------
+    G_GA/err_GA : amplitude and its uncertainty of GA component
+    g_NonGA : non-GA glide component
+    """
+
+    GA_hat = glide_gen(1.0, 266.4, -28.9)
+
+    # GA component
+    G_GA = np.dot(gv, GA_hat)
+    errG_GA = np.dot(err_gv, GA_hat)
+
+    # non-GA component
+    g_NonGA = gv - G_GA * GA_hat
+    err_NonGA = err_gv - errG_GA * GA_hat
+    [G_NonGA, RA_NonGA, DC_NonGA,
+     errG_NonGA, errRA_NonGA, errDC_NonGA] = glide_calc(g_NonGA, err_NonGA)
+
+    return [G_GA, errG_GA, G_NonGA, RA_NonGA, DC_NonGA,
+            errG_NonGA, errRA_NonGA, errDC_NonGA]
 
 
 def test_code(flag):
@@ -303,5 +343,5 @@ def test_code(flag):
         print('Output: ', g1, RA1, DC1, err_g1, err_RA1, err_DC1)
 
 
-test_code(1)
+# test_code(1)
 # --------------------------------- END --------------------------------

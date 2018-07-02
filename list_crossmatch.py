@@ -26,7 +26,7 @@ def list_crossmatch(X1, X2):
     '''
 
     # =======
-    # Add some codes here to eliminate duplicate elemnets
+    # Add some codes here to eliminate duplicate elements
     # =======
 
     com_list = []
@@ -36,16 +36,19 @@ def list_crossmatch(X1, X2):
     for i, x1 in enumerate(X1):
         indarr = np.where(X2 == x1)[0]
 
-        if indarr:
+        # print(indarr, indarr.size)
+
+        if indarr.size:
             com_list.append(x1)
             index1.append(i)
-            j = indarr[0]
-            index2.append(j)
-        # else:
+            # j = indarr[0]
+            index2.append(indarr[0])
+
+            # print(x1, i, indarr[0])
 
     com_list = np.asarray(com_list, dtype=str)
-    index1 = np.asarray(index1, dtype=str)
-    index2 = np.asarray(index2, dtype=str)
+    index1 = np.asarray(index1, dtype=int)
+    index2 = np.asarray(index2, dtype=int)
 
     return com_list, index1, index2
 

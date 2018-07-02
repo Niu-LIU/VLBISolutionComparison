@@ -8,9 +8,10 @@ Created on Wed Jan  3 15:07:46 2018
 """
 
 import numpy as np
+from numpy import sin, cos
 import matplotlib.pyplot as plt
-cos = np.cos
-sin = np.sin
+# cos = np.cos
+# sin = np.sin
 
 
 # -----------------------------  FUNCTIONS -----------------------------

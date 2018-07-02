@@ -119,22 +119,26 @@ def stats_calc(t, res, err, flog):
           "# Intercept : %.2f  " % intercept,
           file=flog)
 
+    print("STAS_ALL ", mean, std, wrms, slope, slperr,
+          file=flog)
+
     # Add the statistics after removing the linear trend;
     res1 = res - slope * (t - t0)
-    resn1, errn1, mean1, wrms1, std1, cond1 = elim_wrms(res1, err)
-    tn1 = t[cond1]
+    # resn1, errn1, mean1, wrms1, std1, cond1 = elim_wrms(res1, err)
+    # tn1 = t[cond1]
+    # par1, parerr1, outlier1, cor1 = linear_regression(
+    #     tn1 - t0, resn1, errn1)
+    # slope1, intercept1 = par1
+    # slperr1, itperr1 = parerr1
+
+    resn1 = resn - slope * (tn - t0)
+    errn1 = errn
+    _, _, mean1, wrms1, std1, cond1 = elim_wrms(res1, err)
+    # tn1 = t[cond1]
     par1, parerr1, outlier1, cor1 = linear_regression(
-        tn1 - t0, resn1, errn1)
+        tn - t0, resn1, errn1)
     slope1, intercept1 = par1
     slperr1, itperr1 = parerr1
-
-    # print("# After removing linear trend:\n",
-    #       "# Mean      : %.3f\n" % mean1,
-    #       "# Std       : %.3f\n" % std1,
-    #       "# WRMS      : %.3f\n" % wrms1,
-    #       "# Slope     : %.3f +/- %.3f\n" % (slope1, slperr1),
-    #       "# Intercept : %.3f\n" % intercept1,
-    #       file=flog)
 
     print("# After removing linear trend:\n",
           "# Mean      : %.2f\n" % mean1,
@@ -142,6 +146,9 @@ def stats_calc(t, res, err, flog):
           "# WRMS      : %.2f\n" % wrms1,
           "# Slope     : %.2f +/- %.2f\n" % (slope1, slperr1),
           "# Intercept : %.2f\n" % intercept1,
+          file=flog)
+
+    print("STAS_AFTER ", mean1, std1, wrms1, slope1, slperr1,
           file=flog)
 
     return slope, intercept
